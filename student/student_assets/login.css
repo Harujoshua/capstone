@@ -1,0 +1,198 @@
+        :root {
+            --bg1: #eef2ff;
+            --bg2: #f8fafc;
+            --accent: #1a56db;
+            --muted: #6b7280;
+            --danger-bg: #fee2e2;
+            --danger-text: #991b1b;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+            background: linear-gradient(135deg, var(--bg1), var(--bg2));
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            color: #0f172a;
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 980px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(2, 6, 23, 0.08);
+            overflow: hidden;
+            display: flex;
+            gap: 0;
+        }
+
+        .brand {
+            flex: 1;
+            min-width: 280px;
+            background: linear-gradient(180deg, #0ea5e9 0%, #6366f1 100%);
+            color: #fff;
+            padding: 28px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .brand::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .brand-logo {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .brand-inner {
+            text-align: center;
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 1.6rem;
+            letter-spacing: 0.2px
+        }
+
+        .brand p {
+            margin-top: 8px;
+            opacity: 0.95
+        }
+
+        .form {
+            flex: 1;
+            padding: 24px 32px;
+        }
+
+        .header {
+            margin-bottom: 18px
+        }
+
+        h2 {
+            margin: 0 0 6px;
+            font-size: 1.25rem
+        }
+
+        .lead {
+            color: var(--muted);
+            font-size: 0.95rem;
+            margin: 0
+        }
+
+        .error {
+            background: var(--danger-bg);
+            color: var(--danger-text);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 14px
+        }
+
+        .form label {
+            display: block;
+            font-weight: 600;
+            margin: 10px 0 6px
+        }
+
+        .form input[type="text"],
+        .form input[type="password"] {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: 1px solid #e6e9ee;
+            font-size: 0.96rem;
+            outline: none;
+        }
+
+        .form input[type="text"]:focus,
+        .form input[type="password"]:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1);
+        }
+
+        .form .pw {
+            display: flex;
+            gap: 8px;
+        }
+
+        .pw .toggle {
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #e6e9ee;
+            background: #fff;
+            color: var(--muted);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .hint {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin: 6px 0 0;
+        }
+
+        .submit {
+            margin-top: 18px;
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: none;
+            background: var(--accent);
+            color: #fff;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .submit:hover {
+            background: #1648c0;
+        }
+
+        @media (max-width:780px) {
+            .auth-card {
+                flex-direction: column
+            }
+
+            .brand {
+                padding: 20px
+            }
+
+            .form {
+                padding: 20px
+            }
+        }

@@ -1,0 +1,150 @@
+/* =====================================================
+   Courses Page Styles
+   ===================================================== */
+
+.course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.course-card {
+    background: white;
+    border-radius: 1.5rem;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    transition: transform 0.3s ease;
+}
+
+.course-card:hover {
+    transform: scale(1.02);
+}
+
+.course-banner {
+    height: 120px;
+    background: linear-gradient(45deg, var(--primary), #818cf8);
+    padding: 1.5rem;
+    color: white;
+    position: relative;
+}
+
+.course-banner h2 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.course-content {
+    padding: 1.5rem;
+}
+
+.course-tag {
+    position: absolute;
+    bottom: 1rem;
+    right: 1.5rem;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.instructor-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+.instructor-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.instructor-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.instructor-label {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+/* Empty state */
+.empty-courses {
+    text-align: center;
+    padding: 4rem;
+}
+
+.empty-courses-icon {
+    font-size: 3rem;
+    color: #cbd5e1;
+    margin-bottom: 1rem;
+}
+
+.empty-courses-title {
+    margin: 0;
+    color: #64748b;
+}
+
+.empty-courses-text {
+    color: #94a3b8;
+    margin-top: 0.5rem;
+}
+
+/* =====================================================
+   Responsive
+   ===================================================== */
+
+@media (max-width: 768px) {
+    .course-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .course-content {
+        padding: 1rem;
+    }
+
+    .course-banner {
+        padding: 1rem;
+        height: 90px;
+    }
+}
+
+@media (max-width: 480px) {
+    .course-grid {
+        gap: 0.5rem;
+    }
+
+    .course-content {
+        padding: 0.75rem;
+    }
+
+    .course-banner {
+        padding: 0.75rem;
+        height: 80px;
+    }
+
+    .course-banner h2 {
+        font-size: 1.2rem !important;
+    }
+
+    .instructor-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 0.8rem;
+    }
+}

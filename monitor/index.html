@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Card Monitor</title>
+  <link rel="stylesheet" href="monitor_assets/monitor_index.css">
+</head>
+
+<body>
+  <div id="preview" class="preview-inline" aria-hidden="true">
+    <div class="preview-card">
+      <div class="photo-wrap">
+        <img id="studentPhoto" src="" alt="Student photo">
+      </div>
+      <div class="card-footer">
+        <div class="name" id="studentName">Student Name</div>
+        <div class="info" id="studentInfo"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let lastUid = "";
+    const AUTO_HIDE_MS = 2000; // auto-hide after brief preview (ms)
+    let hideTimeout = null;
+
+    const placeholder = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240"><rect width="100%" height="100%" fill="%23f1f5f9"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="20" fill="%236b7280">No Photo</text></svg>');
+
+    async function poll() {
+      try {
+        const r = await fetch('../neustadmin2026/get_uid.php', { cache: 'no-store' });
+        const uid = (await r.text()).trim();
+        if (uid && uid !== lastUid) {
+          lastUid = uid;
+          await fetchStudent(uid);
+        }
+        if (!uid) {
+          lastUid = "";
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function fetchStudent(uid) {
+      try {
+        const formData = new FormData();
+        formData.append('uid', uid);
+        const res = await fetch('get_student.php', {
+          method: 'POST',
+          body: formData,
+          cache: 'no-store'
+        });
+        const j = await res.json();
+        if (j && j.success && j.student) {
+          const s = j.student;
+          const photo = s.photo ? ('../uploads/students/' + encodeURIComponent(s.photo)) : placeholder;
+          document.getElementById('studentPhoto').src = photo;
+          document.getElementById('studentName').textContent = s.name || '';
+          document.getElementById('studentInfo').textContent = [s.course || '', s.year_level || '', s.section || ''].filter(Boolean).join(' • ');
+          showPreview();
+        } else {
+          document.getElementById('studentPhoto').src = placeholder;
+          document.getElementById('studentName').textContent = 'Unknown student';
+          document.getElementById('studentInfo').textContent = '';
+          showPreview();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function showPreview() {
+      const preview = document.getElementById('preview');
+      preview.classList.add('visible');
+      preview.setAttribute('aria-hidden', 'false');
+      if (hideTimeout) { clearTimeout(hideTimeout); hideTimeout = null; }
+      hideTimeout = setTimeout(hidePreview, AUTO_HIDE_MS);
+    }
+
+    function hidePreview() {
+      const preview = document.getElementById('preview');
+      preview.classList.remove('visible');
+      preview.setAttribute('aria-hidden', 'true');
+      try { document.getElementById('studentPhoto').src = ''; } catch (e) { }
+      try { document.getElementById('studentName').textContent = ''; } catch (e) { }
+      try { document.getElementById('studentInfo').textContent = ''; } catch (e) { }
+      if (hideTimeout) { clearTimeout(hideTimeout); hideTimeout = null; }
+    }
+    setInterval(poll, 300);
+    poll();
+  </script>
+</body>
+
+</html>

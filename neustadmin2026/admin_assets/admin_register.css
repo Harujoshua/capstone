@@ -1,0 +1,194 @@
+:root {
+  --bg: #f3f6fb;
+  --card: #ffffff;
+  --accent: #0b72f6;
+  --muted: #6b7280;
+  --danger: #ef4444;
+}
+
+.container {
+  max-width: 980px;
+  margin: 30px auto;
+  background: var(--card);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(10, 20, 40, 0.06);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.error {
+  background: #fff3f2;
+  color: var(--danger);
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 18px;
+}
+
+.left-col .card,
+.right-col .card {
+  background: #fbfdff;
+  border: 1px solid #eef3fb;
+  padding: 14px;
+  border-radius: 10px;
+}
+
+.photo-preview {
+  width: 180px;
+  height: 180px;
+  border-radius: 8px;
+  object-fit: cover;
+  display: block;
+  margin: 8px auto;
+  background: #fff;
+  border: 1px solid #e6eefb;
+}
+
+.photo-preview-container {
+  text-align: center;
+}
+
+.file-meta {
+  font-size: 0.88rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.field {
+  margin-bottom: 12px;
+}
+
+.field label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.input,
+select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #e6eef7;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.small {
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+
+.small-status {
+  margin-top: 8px;
+  color: var(--muted);
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.btn {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 0;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #0a5dd4;
+}
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: #111;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-secondary:hover {
+  background: #e5e7eb;
+}
+
+.rfid-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rfid-indicator {
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: #eef3fb;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rfid-indicator::before {
+  content: "";
+  display: block;
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(11, 114, 246, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(11, 114, 246, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(11, 114, 246, 0); }
+}
+
+.rfid-status-text {
+  font-weight: 500;
+}
+
+/* Grid layouts */
+.course-year-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.email-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Responsive */
+@media (max-width: 880px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,462 @@
+/* Container */
+.container {
+    max-width: 1200px;
+    width: calc(100% - 40px);
+    margin: 20px auto;
+    padding: 20px;
+}
+
+h2 {
+    margin-top: 0;
+}
+
+/* Controls */
+.controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.controls form {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.controls select,
+.controls button,
+.controls input[type="date"] {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.controls select {
+    background: #fff;
+}
+
+.controls button {
+    background: #dc2626;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.controls button:hover {
+    background: #b91c1c;
+}
+
+/* Date range controls */
+.date-range-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.date-input-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    padding: 2px 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #475569;
+}
+
+.date-input-box label {
+    font-weight: 600;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.date-input-box input[type="date"] {
+    border: none;
+    background: transparent;
+    padding: 6px 4px;
+    outline: none;
+    font-size: 13px;
+    color: #1e293b;
+}
+
+.preset-select {
+    background: #fff;
+    border-color: #cbd5e1;
+}
+
+.btn-export-options {
+    background: #0284c7 !important;
+    color: #fff !important;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    padding: 8px 12px;
+    border-radius: 6px;
+}
+
+.btn-export-options:hover {
+    background: #0369a1 !important;
+}
+
+.btn-export {
+    background: #10b981 !important;
+    color: #fff !important;
+}
+
+.btn-export:hover {
+    background: #059669 !important;
+}
+
+/* Printable Header - hidden on screen */
+.print-only-header {
+    display: none;
+}
+
+/* Modal styles */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-overlay.show {
+    display: flex;
+}
+
+.modal-box {
+    background: #ffffff;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPop {
+    from { transform: scale(0.92); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modal-close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #64748b;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-subtext {
+    margin: 0 0 16px 0;
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.preset-buttons {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.preset-btn {
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.preset-btn:hover {
+    background: #0ea5e9;
+    color: #fff;
+    border-color: #0ea5e9;
+}
+
+.modal-date-inputs {
+    display: flex;
+    gap: 12px;
+}
+
+.modal-input-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.modal-input-group label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.modal-input-group input[type="date"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.modal-footer {
+    padding: 14px 20px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.btn-modal-cancel {
+    background: #e2e8f0;
+    color: #475569;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-modal-csv {
+    background: #10b981;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-modal-print {
+    background: #ef4444;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* Hidden Form */
+.hidden-form {
+    display: none;
+}
+
+/* Table */
+.table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    -webkit-overflow-scrolling: touch;
+}
+
+table.table {
+    width: 100%;
+    min-width: 980px;
+    border-collapse: collapse;
+    background: #fff;
+    margin-top: 0;
+}
+
+table.table th,
+table.table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+table.table th {
+    background: #f3f4f6;
+    font-weight: 600;
+    color: #374151;
+}
+
+table.table tr:hover {
+    background: #f9fafb;
+}
+
+/* Date Header Row */
+tr.date-header td {
+    background: #f8f9fa;
+    font-weight: 700;
+    padding: 12px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+/* Status Indicators */
+.status-in {
+    color: green;
+    font-weight: 600;
+}
+
+.status-out {
+    color: blue;
+    font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        width: calc(100% - 12px);
+        margin: 10px auto 16px;
+        padding: 12px;
+    }
+
+    .controls {
+        margin-bottom: 12px;
+    }
+
+    .controls form {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+    }
+
+    .controls select,
+    .controls button,
+    .controls input[type="date"] {
+        width: 100%;
+    }
+
+    table.table {
+        font-size: 12px;
+    }
+
+    table.table th,
+    table.table td {
+        padding: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        width: calc(100% - 8px);
+        margin: 8px auto 12px;
+        padding: 10px;
+    }
+
+    h2 {
+        font-size: 1.1rem;
+    }
+}
+
+/* ================= PRINT STYLES ================= */
+@media print {
+    :root {
+        --admin-sidebar-width: 0px !important;
+    }
+
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    body {
+        padding: 0 !important;
+        margin: 0 !important;
+        background: #fff !important;
+        min-height: auto !important;
+        overflow: visible !important;
+    }
+    
+    .admin-sidebar, 
+    .admin-sidebar-toggle, 
+    .admin-sidebar-overlay,
+    #backToTop,
+    .controls {
+        display: none !important;
+    }
+
+    .container {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        position: static !important;
+    }
+
+    .table-wrap {
+        border: none !important;
+        overflow: visible !important;
+        display: block !important;
+    }
+
+    table.table {
+        min-width: 0 !important;
+        width: 100% !important;
+        border-collapse: collapse !important;
+        page-break-inside: auto;
+    }
+
+    table.table th {
+        background: #f3f4f6 !important;
+        color: #000 !important;
+        border: 1px solid #000 !important;
+    }
+
+    table.table tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+    
+    table.table td {
+        border: 1px solid #000 !important;
+        padding: 8px !important;
+        font-size: 11pt !important;
+        color: #000 !important;
+    }
+    
+    tr.date-header td {
+        background: #e5e7eb !important;
+    }
+
+    /* Ensure colors print correctly if user enables background graphics */
+    .status-in { color: #166534 !important; font-weight: bold; }
+    .status-out { color: #1e40af !important; font-weight: bold; }
+}

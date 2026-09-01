@@ -1,0 +1,430 @@
+/* =========================================================
+   Faculty Students Page — faculty_students.css
+   ========================================================= */
+
+.app {
+	display: flex;
+	min-height: 100vh;
+}
+
+.content {
+	padding: 24px 32px;
+	flex: 1;
+	min-height: 100vh;
+	min-width: 0; /* prevent flex children from overflowing */
+}
+
+.container-like {
+	max-width: 1100px;
+	margin: 16px auto;
+	background: #fff;
+	border-radius: 8px;
+	padding: 16px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+	width: 100%;
+}
+
+/* ---- Table ---- */
+table {
+	border-collapse: collapse;
+	width: 100%;
+	font-size: 0.95rem;
+}
+
+th,
+td {
+	border: 1px solid #ddd;
+	padding: 10px 8px;
+}
+
+th {
+	background: #f3f4f6;
+	font-weight: 600;
+}
+
+.table-responsive {
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	width: 100%;
+	margin-bottom: 16px;
+}
+
+/* ---- Buttons ---- */
+.btn {
+	display: inline-block;
+	padding: 8px 12px;
+	background: var(--accent, #2bb7b3);
+	color: #fff;
+	border-radius: 6px;
+	text-decoration: none;
+	cursor: pointer;
+	border: none;
+	font-size: 0.9rem;
+	white-space: nowrap;
+	transition: opacity 0.2s;
+}
+
+.btn:hover {
+	opacity: 0.88;
+}
+
+/* ---- Filters / Form ---- */
+.filters {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin-bottom: 16px;
+	align-items: center;
+}
+
+.filters-form {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	gap: 10px;
+	align-items: flex-end;
+	margin: 0;
+	width: 100%;
+}
+
+/* Each label is a self-contained field: label text on top, input below */
+.filters-form label {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	font-size: 0.82rem;
+	font-weight: 600;
+	color: #374151;
+	flex: 1 1 200px; /* min 200px, grows to fill remaining space */
+	min-width: 0;
+}
+
+/* Inputs & selects fill their label container */
+.filters-form select,
+.filters-form input[type="text"],
+.filters select,
+.filters input[type="text"] {
+	padding: 9px 10px;
+	border: 1px solid #d1d5db;
+	border-radius: 6px;
+	font-size: 0.9rem;
+	width: 100%;
+	min-width: 0;
+	background: #fff;
+	box-sizing: border-box;
+}
+
+/* Search button sits at the bottom, aligned with inputs */
+.filters-form .btn {
+	align-self: flex-end;
+	flex-shrink: 0;
+	height: 38px;
+	line-height: 1;
+}
+
+/* ---- Cards ---- */
+.card {
+	background: #fff;
+	padding: 14px;
+	border-radius: 8px;
+	box-shadow: 0 6px 18px rgba(2, 6, 23, 0.06);
+	margin-bottom: 12px;
+}
+
+.profile {
+	background: #fff;
+	padding: 18px;
+	border-radius: 8px;
+	box-shadow: 0 6px 18px rgba(2, 6, 23, 0.06);
+	margin-bottom: 18px;
+}
+
+.profile h2 {
+	margin: 0 0 10px;
+	font-size: 1.4rem;
+}
+
+/* ---- Modal ---- */
+.modal {
+	display: none;
+	position: fixed;
+	z-index: 2000;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.5);
+}
+
+.modal.open {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.modal-content {
+	background: #fff;
+	border-radius: 8px;
+	width: 90%;
+	max-width: 900px;
+	max-height: 90vh;
+	overflow-y: auto;
+	position: relative;
+	box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-close {
+	position: absolute;
+	top: 12px;
+	right: 12px;
+	background: #e5e7eb;
+	border: none;
+	padding: 8px 12px;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 20px;
+	z-index: 10;
+}
+
+.modal-close:hover {
+	background: #d1d5db;
+}
+
+.modal-body {
+	padding: 20px;
+	font-size: 0.95rem;
+}
+
+.loading {
+	text-align: center;
+	padding: 20px;
+}
+
+.error-message {
+	color: red;
+	padding: 20px;
+	font-size: 0.95rem;
+}
+
+/* =========================================================
+   Responsive — Tablet (≤ 960 px)
+   ========================================================= */
+@media (max-width: 960px) {
+	.content {
+		padding: 16px 18px;
+	}
+}
+
+/* =========================================================
+   Responsive — Mobile (≤ 768 px)
+   ========================================================= */
+@media (max-width: 768px) {
+	html {
+		font-size: 15px;
+	}
+
+	.content {
+		padding: 12px 10px;
+	}
+
+	.card {
+		padding: 12px;
+		margin-bottom: 10px;
+	}
+
+	/* Filters: stack every field vertically, full width */
+	.filters-form {
+		flex-direction: column;
+		gap: 8px;
+		align-items: stretch;
+	}
+
+	.filters-form label {
+		flex: 1 1 100%;
+		width: 100%;
+	}
+
+	.filters-form select,
+	.filters-form input[type="text"] {
+		width: 100%;
+		box-sizing: border-box;
+	}
+
+	.filters-form .btn {
+		width: 100%;
+		text-align: center;
+		height: auto;
+		padding: 10px;
+	}
+
+	table {
+		font-size: 0.88rem;
+	}
+
+	th,
+	td {
+		padding: 7px 5px;
+	}
+
+	.btn {
+		padding: 6px 10px;
+		font-size: 0.82rem;
+	}
+
+	.modal-content {
+		width: 95%;
+		max-height: 95vh;
+	}
+}
+
+/* =========================================================
+   Responsive — Small Mobile (≤ 480 px)
+   ========================================================= */
+@media (max-width: 480px) {
+	html {
+		font-size: 13px;
+	}
+
+	.content {
+		padding: 8px 6px;
+	}
+
+	.card {
+		padding: 10px 8px;
+		margin-bottom: 8px;
+	}
+
+	/* Table: hide less-critical columns on tiny screens */
+	table thead th:nth-child(3), /* RFID */
+	table tbody td:nth-child(3) {
+		display: none;
+	}
+
+	th,
+	td {
+		padding: 5px 3px;
+		font-size: 0.78rem;
+	}
+
+	/* Action button compact */
+	.view-student-btn {
+		padding: 5px 6px;
+		font-size: 0.75rem;
+		white-space: normal;
+		line-height: 1.3;
+	}
+
+	.btn {
+		padding: 7px;
+		font-size: 0.8rem;
+		width: 100%;
+		text-align: center;
+	}
+
+	.modal-content {
+		width: 98%;
+		max-height: 98vh;
+	}
+
+	.modal-body {
+		padding: 10px;
+	}
+}
+
+.print-header {
+	display: none;
+}
+
+@media print {
+	.sidebar,
+    .mobile-nav,
+    .sidebar-overlay,
+    .navbar,
+	.header,
+	.filters,
+	#sidebarToggle,
+    .btn,
+    form,
+    .card:has(.filters-form),
+    .modal {
+		display: none !important;
+	}
+
+	.content {
+		padding: 0 !important;
+		margin: 0 !important;
+	}
+
+	body {
+		background: #fff;
+	}
+
+	.app {
+		display: block;
+	}
+
+	table {
+		width: 100%;
+		border-collapse: collapse;
+	}
+
+	th,
+	td {
+		border: 1px solid #000;
+		padding: 8px;
+        color: #000 !important;
+	}
+
+    th {
+        background: #eee !important;
+        -webkit-print-color-adjust: exact;
+    }
+
+	.print-header {
+		display: flex !important;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 20px;
+		border-bottom: 2px solid #000;
+		padding-bottom: 10px;
+	}
+
+	.print-header .print-text-content {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.print-header .print-title {
+		font-size: 1.5rem;
+		font-weight: bold;
+		text-align: center;
+		text-transform: uppercase;
+		margin-bottom: 8px;
+	}
+
+	.print-header .print-subtitle {
+		font-size: 1rem;
+		text-align: center;
+		line-height: 1.4;
+	}
+
+	.print-header .print-logo {
+		height: 80px;
+		width: auto;
+		object-fit: contain;
+	}
+
+    .card {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+    }
+
+    /* Hide Actions column in students table */
+    th:last-child,
+    td:last-child {
+        display: none !important;
+    }
+}

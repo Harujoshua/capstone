@@ -1,0 +1,389 @@
+:root {
+    --bg: #f5f7fb;
+    --card: #ffffff;
+    --muted: #6b7280;
+    --accent: #2563eb;
+    --danger: #dc2626;
+    --border: #e6e8ee;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Inter, system-ui, Arial, Helvetica, sans-serif;
+    background: var(--bg);
+    margin: 0;
+    color: #0f172a;
+    min-height: 100vh;
+    overflow-y: scroll;
+}
+
+.container {
+    max-width: 1200px;
+    width: calc(100% - 40px);
+    margin: 24px auto;
+    padding: 22px;
+    background: var(--card);
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+header.top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+header.top h1 {
+    font-size: 18px;
+    margin: 0;
+}
+
+.toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.btn {
+    background: var(--accent);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 0;
+    cursor: pointer;
+}
+
+.btn.ghost {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--border);
+}
+
+form#filterForm {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+}
+
+label.small {
+    font-size: 12px;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 6px;
+}
+
+input[type="text"],
+select,
+input[type="time"] {
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    width: 100%;
+}
+
+.table-wrap {
+    overflow: auto;
+    margin-top: 18px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    -webkit-overflow-scrolling: touch;
+}
+
+table.table {
+    width: 100%;
+    min-width: 980px;
+    border-collapse: collapse;
+    background: transparent;
+}
+
+table.table th,
+table.table td {
+    padding: 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    font-size: 14px;
+}
+
+table.table th {
+    background: transparent;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.actions form {
+    display: inline;
+}
+
+.muted {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.pager {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 12px;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.5);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal.open {
+    display: flex;
+}
+
+.modal-card {
+    background: var(--card);
+    width: 100%;
+    max-width: 920px;
+    border-radius: 10px;
+    padding: 18px;
+    box-shadow: 0 8px 30px rgba(2, 6, 23, 0.12);
+    overflow: auto;
+    max-height: 90vh;
+}
+
+.modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.field {
+    margin-bottom: 10px;
+}
+
+.field label {
+    display: block;
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+.field input[type="text"] {
+    margin-top: 8px;
+}
+
+.student-list {
+    max-height: 240px;
+    overflow: auto;
+    border: 1px solid var(--border);
+    padding: 8px;
+    border-radius: 8px;
+    margin-top: 8px;
+}
+
+.student-list label {
+    display: block;
+    margin-bottom: 6px;
+}
+
+.topbar-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.topbar-row h2 {
+    margin: 0;
+    font-size: 16px;
+}
+
+/* Inline form styles */
+.inline-form {
+    display: inline;
+    margin: 0;
+    padding: 0;
+}
+
+.edit-btn {
+    background: none;
+    border: none;
+    color: #06c;
+    padding: 0;
+    cursor: pointer;
+}
+
+.delete-btn {
+    background: none;
+    border: none;
+    color: #c00;
+    padding: 0;
+    cursor: pointer;
+    margin-left: 8px;
+}
+
+.pagination-btn {
+    background: none;
+    border: none;
+    color: var(--accent);
+    padding: 0;
+    cursor: pointer;
+}
+
+/* Pagination section */
+.pagination-section {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.pagination-controls {
+    margin-left: auto;
+}
+
+/* Time inputs flex layout */
+.time-inputs {
+    display: flex;
+    gap: 8px;
+}
+
+.time-input-col {
+    flex: 1;
+}
+
+/* Form submission section */
+.form-submit-section {
+    margin-top: 14px;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+/* Assigned students section */
+.assigned-students-section {
+    margin-top: 12px;
+}
+
+/* Responsive design */
+@media (max-width: 720px) {
+    .container {
+        width: calc(100% - 12px);
+        margin: 10px auto 16px;
+        padding: 12px;
+        border-radius: 10px;
+    }
+
+    header.top {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .toolbar {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .toolbar .btn {
+        width: 100%;
+    }
+
+    form#filterForm {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    form#filterForm>div:last-child {
+        align-self: stretch !important;
+        display: block !important;
+    }
+
+    form#filterForm>div:last-child .btn {
+        width: 100%;
+    }
+
+    .modal {
+        padding: 8px;
+    }
+
+    .modal-card {
+        padding: 12px;
+        border-radius: 10px;
+        max-height: 94vh;
+    }
+
+    .modal-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .time-inputs {
+        flex-direction: column;
+    }
+
+    .actions {
+        white-space: nowrap;
+    }
+
+    .pagination-controls {
+        width: 100%;
+        margin-left: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        width: calc(100% - 8px);
+        padding: 8px;
+    }
+
+    header.top h1 {
+        font-size: 15px;
+    }
+
+    label.small {
+        font-size: 11px;
+    }
+
+    input[type="text"],
+    select,
+    input[type="time"] {
+        min-height: 36px;
+        font-size: 13px;
+        padding: 6px;
+    }
+
+    table.table th,
+    table.table td {
+        padding: 6px 4px;
+        font-size: 12px;
+    }
+
+    .topbar-row h2 {
+        font-size: 14px;
+    }
+
+    .form-submit-section {
+        justify-content: stretch;
+    }
+
+    .form-submit-section .btn {
+        width: 100%;
+        padding: 8px;
+        font-size: 13px;
+    }
+
+    .btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+}
