@@ -1,6 +1,15 @@
 <?php
 include('../db.php');
 include('auth.php');
+include_once('admin_db.php');
+
+$is_super_admin = (($_SESSION['admin_role'] ?? 'sub_admin') === 'super_admin');
+$can_edit_student = $is_super_admin || (get_admin_setting($admin_conn, 'subadmin_student_edit', '1') === '1');
+if (!$can_edit_student) {
+    header('Content-Type: application/json');
+    echo json_encode(['success'=>false,'error'=>'permission_denied','message'=>'You do not have permission to edit student records']);
+    exit;
+}
 
 // Only accept POST requests for this endpoint
 if(($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST'){

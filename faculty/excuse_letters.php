@@ -31,6 +31,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $conn->prepare("UPDATE excuse_letters SET status = ? WHERE id = ?");
             $stmt->bind_param("si", $new_status, $id);
             $stmt->execute();
+
+            // --- Re-evaluate attendance based on new excuse status ---
+            // Fetch the excuse details needed to locate/update the attendance record
+            $ex_det = $conn->query("SELECT student_id, schedule_id, date_absent FROM excuse_letters WHERE id = $id LIMIT 1");
+            if ($ex_det && $ex_row = $ex_det->fetch_assoc()) {
+                $ex_stu  = intval($ex_row['student_id']);
+                $ex_sch  = intval($ex_row['schedule_id']);
+                $ex_date = $conn->real_escape_string($ex_row['date_absent']);
+
+                // Check if an attendance record exists for this student / class / date
+                $att_q = $conn->query("SELECT id, time_logged FROM attendance WHERE student_id = $ex_stu AND schedule_id = $ex_sch AND attendance_date = '$ex_date' LIMIT 1");
+                $att   = $att_q ? $att_q->fetch_assoc() : null;
+
+                if ($att) {
+                    // Only update when there is no card-tap (time_logged is NULL)
+                    if (empty($att['time_logged'])) {
+                        if ($new_status === 'Approved') {
+                            $conn->query("UPDATE attendance SET status = 'Excused' WHERE id = {$att['id']}");
+                        } else {
+                            // Rejected / no longer approved — revert to Absent
+                            $conn->query("UPDATE attendance SET status = 'Absent' WHERE id = {$att['id']}");
+                        }
+                    }
+                    // If time_logged exists the student tapped — do not overwrite
+                } else {
+                    // No attendance record yet — insert one only when approved (avoid duplicate absent rows)
+                    if ($new_status === 'Approved') {
+                        $stu_name_q = $conn->query("SELECT name FROM students WHERE id = $ex_stu LIMIT 1");
+                        $stu_name   = ($stu_name_q && $sn = $stu_name_q->fetch_assoc()) ? $conn->real_escape_string($sn['name']) : '';
+                        $conn->query("INSERT IGNORE INTO attendance (schedule_id, student_id, name, attendance_date, status, time_logged) VALUES ($ex_sch, $ex_stu, '$stu_name', '$ex_date', 'Excused', NULL)");
+                    }
+                    // For Rejected with no existing record: leave as-is; the attendance logic
+                    // in attendance.php will insert 'Absent' next time the page is loaded.
+                }
+            }
         }
     }
     header("Location: excuse_letters.php" . (isset($_GET['status']) ? '?status=' . urlencode($_GET['status']) : ''));
@@ -54,13 +89,15 @@ if ($schedule_filter > 0) {
     $schedule_cond = "AND el.schedule_id = $schedule_filter";
 }
 
-// Fetch excuses scoped to this teacher's students
+// Fetch excuses scoped to this teacher's students (with corresponding attendance status)
 $sql = "
-    SELECT el.*, st.name AS student_name, st.course, st.year_level, st.section, sc.subject, sc.id AS sched_id
+    SELECT el.*, st.name AS student_name, st.course, st.year_level, st.section, sc.subject, sc.id AS sched_id,
+           a.status AS attendance_status, a.time_logged AS card_tap_time
     FROM excuse_letters el
     JOIN students st ON el.student_id = st.id
     JOIN schedules sc ON el.schedule_id = sc.id
     JOIN schedule_students ss ON ss.student_id = el.student_id AND ss.schedule_id = el.schedule_id
+    LEFT JOIN attendance a ON a.student_id = el.student_id AND a.schedule_id = el.schedule_id AND a.attendance_date = el.date_absent
     WHERE $teacher_where
     $status_cond
     $schedule_cond
@@ -327,7 +364,7 @@ if ($scheds_res) {
 
     <main class="content">
         <div class="page-header">
-            <h1><i class="fa-solid fa-file-medical" style="color:var(--accent); margin-right:0.4rem;"></i>Excuse Letters</h1>
+            <h1><i style="color:var(--accent); margin-right:0.4rem;"></i>Excuse Letters</h1>
             <p>Excuse letters submitted by your registered students.</p>
         </div>
 
@@ -383,7 +420,9 @@ if ($scheds_res) {
                             <th>Reason</th>
                             <th>Attachment</th>
                             <th>Submitted</th>
-                            <th>Status</th>
+                            <th>Excuse Status</th>
+                            <th>Card Tap</th>
+                            <th>Attendance</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -415,6 +454,30 @@ if ($scheds_res) {
                             </td>
                             <td>
                                 <span class="pill pill-<?= strtolower($e['status']) ?>"><?= htmlspecialchars($e['status']) ?></span>
+                            </td>
+                            <td style="font-size:0.82rem;">
+                                <?php if (!empty($e['card_tap_time'])): ?>
+                                    <span style="color:#065f46; font-weight:600;"><i class="fa-solid fa-id-card"></i> <?= date('h:i A', strtotime($e['card_tap_time'])) ?></span>
+                                <?php else: ?>
+                                    <span style="color:#9ca3af;"><i class="fa-solid fa-ban"></i> No Tap</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php
+                                    $att_s = $e['attendance_status'] ?? null;
+                                    if ($att_s) {
+                                        $att_pill = match(strtolower($att_s)) {
+                                            'present' => 'background:#d1fae5;color:#065f46;',
+                                            'late'    => 'background:#fef3c7;color:#92400e;',
+                                            'absent'  => 'background:#fee2e2;color:#7f1d1d;',
+                                            'excused' => 'background:#e0f2fe;color:#0369a1;',
+                                            default   => 'background:#f1f5f9;color:#64748b;',
+                                        };
+                                        echo '<span class="pill" style="' . $att_pill . '">' . htmlspecialchars($att_s) . '</span>';
+                                    } else {
+                                        echo '<span style="color:var(--muted);font-size:0.78rem;">—</span>';
+                                    }
+                                ?>
                             </td>
                             <td>
                                 <div class="act-group">

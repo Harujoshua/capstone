@@ -30,13 +30,16 @@
 
     async function poll() {
       try {
-        const r = await fetch('../neustadmin2026/get_uid.php', { cache: 'no-store' });
-        const uid = (await r.text()).trim();
+        const res = await fetch('get_latest_scan.php', { cache: 'no-store' });
+        const data = await res.json();
+        
+        if (!data || !data.success) return;
+
+        const uid = (data.uid || '').trim();
         if (uid && uid !== lastUid) {
           lastUid = uid;
-          await fetchStudent(uid);
-        }
-        if (!uid) {
+          displayScan(data);
+        } else if (!uid) {
           lastUid = "";
         }
       } catch (e) {
@@ -44,31 +47,34 @@
       }
     }
 
-    async function fetchStudent(uid) {
-      try {
-        const formData = new FormData();
-        formData.append('uid', uid);
-        const res = await fetch('get_student.php', {
-          method: 'POST',
-          body: formData,
-          cache: 'no-store'
-        });
-        const j = await res.json();
-        if (j && j.success && j.student) {
-          const s = j.student;
-          const photo = s.photo ? ('../uploads/students/' + encodeURIComponent(s.photo)) : placeholder;
-          document.getElementById('studentPhoto').src = photo;
-          document.getElementById('studentName').textContent = s.name || '';
-          document.getElementById('studentInfo').textContent = [s.course || '', s.year_level || '', s.section || ''].filter(Boolean).join(' • ');
-          showPreview();
-        } else {
-          document.getElementById('studentPhoto').src = placeholder;
-          document.getElementById('studentName').textContent = 'Unknown student';
-          document.getElementById('studentInfo').textContent = '';
-          showPreview();
+    function displayScan(data) {
+      if (data.student) {
+        const s = data.student;
+        const photo = s.photo ? ('../uploads/students/' + encodeURIComponent(s.photo)) : placeholder;
+        document.getElementById('studentPhoto').src = photo;
+        document.getElementById('studentName').textContent = s.name || '';
+        const infoParts = [s.course || '', s.year_level || '', s.section || ''];
+        if (s.is_blocked) {
+          infoParts.push('⛔ BLOCKED');
         }
-      } catch (err) {
-        console.error(err);
+        document.getElementById('studentInfo').textContent = infoParts.filter(Boolean).join(' • ');
+        showPreview();
+      } else if (data.faculty) {
+        const f = data.faculty;
+        const photo = f.photo ? ('../uploads/faculty/' + encodeURIComponent(f.photo)) : placeholder;
+        document.getElementById('studentPhoto').src = photo;
+        document.getElementById('studentName').textContent = f.name || '';
+        const infoParts = ['Faculty', f.department || 'NEUST'];
+        if (f.is_blocked) {
+          infoParts.push('⛔ BLOCKED');
+        }
+        document.getElementById('studentInfo').textContent = infoParts.filter(Boolean).join(' • ');
+        showPreview();
+      } else if (data.unknown) {
+        document.getElementById('studentPhoto').src = placeholder;
+        document.getElementById('studentName').textContent = 'Unregistered Card';
+        document.getElementById('studentInfo').textContent = 'UID: ' + data.uid;
+        showPreview();
       }
     }
 
@@ -89,7 +95,8 @@
       try { document.getElementById('studentInfo').textContent = ''; } catch (e) { }
       if (hideTimeout) { clearTimeout(hideTimeout); hideTimeout = null; }
     }
-    setInterval(poll, 300);
+
+    setInterval(poll, 400);
     poll();
   </script>
 </body>

@@ -8,7 +8,11 @@ if(!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true
     exit;
 }
 
+require_once __DIR__ . '/../session_guard.php';
+enforce_session_inactivity('login.php');
+
 $current_file = basename($_SERVER['PHP_SELF']);
+
 if (!empty($_SESSION['admin_is_first_login']) && $current_file !== 'change_password.php' && $current_file !== 'logout.php') {
     header('Location: change_password.php');
     exit;

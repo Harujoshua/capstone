@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
         
         // Update password and clear token
-        $update_stmt = $conn->prepare("UPDATE faculty SET password_hash = ?, reset_token = NULL, token_expiry = NULL WHERE id = ?");
+        $update_stmt = $conn->prepare("UPDATE faculty SET password_hash = ?, is_first_login = 0, reset_token = NULL, token_expiry = NULL WHERE id = ?");
         $update_stmt->bind_param("si", $hashed_password, $faculty['id']);
         
         if ($update_stmt->execute()) {

@@ -22,14 +22,15 @@ body {
 .app {
     display: flex;
     min-height: 100vh;
+    width: 100%;
 }
 
 .content {
-    padding: 24px 32px;
+    padding: 0;
     flex: 1;
     min-height: 100vh;
     width: 100%;
-    max-width: 1400px;
+    max-width: 1440px;
     margin: 0 auto;
     box-sizing: border-box;
     min-width: 0;
@@ -52,8 +53,8 @@ body {
 /* Welcome Banner */
 .welcome-banner {
     background: var(--card-bg);
-    padding: 24px;
-    border-radius: 12px;
+    padding: 22px 24px;
+    border-radius: 14px;
     margin-bottom: 24px;
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
     border: 1px solid #f1f5f9;
@@ -63,6 +64,7 @@ body {
     justify-content: space-between;
     gap: 16px;
     flex-wrap: wrap;
+    min-width: 0;
 }
 
 .welcome-banner:hover {
@@ -71,30 +73,33 @@ body {
 
 .welcome-banner h1 {
     margin: 0;
-    font-size: 1.5rem;
+    font-size: clamp(1.2rem, 3.2vw, 1.55rem);
     color: #1e293b;
     font-weight: 700;
+    word-break: break-word;
 }
 
 .welcome-banner p {
     margin: 6px 0 0;
     color: var(--muted);
-    font-size: 0.95rem;
+    font-size: 0.92rem;
+    line-height: 1.4;
 }
 
 .active-term-badge {
     background: #f8fafc;
-    padding: 10px 18px;
+    padding: 9px 16px;
     border-radius: 20px;
-    font-size: 0.85rem;
+    font-size: 0.84rem;
     font-weight: 600;
     color: #475569;
     border: 1px solid #e2e8f0;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 8px;
     white-space: nowrap;
     flex-shrink: 0;
+    max-width: 100%;
 }
 
 /* Rates Grid */
@@ -107,8 +112,8 @@ body {
 
 .rate-card {
     background: var(--card-bg);
-    padding: 24px;
-    border-radius: 12px;
+    padding: 22px 20px;
+    border-radius: 14px;
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
     border: 1px solid #f1f5f9;
     display: flex;
@@ -116,6 +121,7 @@ body {
     gap: 16px;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     min-width: 0;
+    box-sizing: border-box;
 }
 
 .rate-card:hover {
@@ -179,20 +185,17 @@ body {
     background: var(--success, #10b981);
 }
 
-.rate-card.attendance-donut-card {
-    border-left: none;
-}
-
-.rate-card.ontime-donut-card {
-    border-left: none;
-}
-
-.rate-card.late-donut-card {
-    border-left: none;
-}
-
+.rate-card.attendance-donut-card,
+.rate-card.ontime-donut-card,
+.rate-card.late-donut-card,
 .rate-card.absent-donut-card {
     border-left: none;
+}
+
+.rate-card.ontime-donut-card,
+.rate-card.late-donut-card,
+.rate-card.absent-donut-card {
+    align-items: flex-start;
 }
 
 .donut-chart-wrapper {
@@ -251,6 +254,7 @@ body {
 .rate-card .card-info {
     flex-grow: 1;
     min-width: 0;
+    width: 100%;
 }
 
 .rate-card .rate-value {
@@ -361,12 +365,10 @@ body {
         transform: scale(0.95);
         box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
     }
-
     70% {
         transform: scale(1);
         box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
     }
-
     100% {
         transform: scale(0.95);
         box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
@@ -378,16 +380,179 @@ body {
         transform: scale(0.95);
         box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7);
     }
-
     70% {
         transform: scale(1);
         box-shadow: 0 0 0 6px rgba(244, 63, 94, 0);
     }
-
     100% {
         transform: scale(0.95);
         box-shadow: 0 0 0 0 rgba(244, 63, 94, 0);
     }
+}
+
+/* Rate Card Action Bar & View Students Button */
+.rate-card-action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 2px;
+    width: 100%;
+}
+
+.view-rate-students-btn {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.view-rate-students-btn.ontime {
+    color: #059669;
+    background: rgba(16, 185, 129, 0.08);
+}
+.view-rate-students-btn.ontime:hover {
+    background: rgba(16, 185, 129, 0.18);
+    color: #047857;
+    transform: translateY(-1px);
+}
+
+.view-rate-students-btn.late {
+    color: #d97706;
+    background: rgba(245, 158, 11, 0.08);
+}
+.view-rate-students-btn.late:hover {
+    background: rgba(245, 158, 11, 0.18);
+    color: #b45309;
+    transform: translateY(-1px);
+}
+
+.view-rate-students-btn.absent {
+    color: #dc2626;
+    background: rgba(239, 68, 68, 0.08);
+}
+.view-rate-students-btn.absent:hover {
+    background: rgba(239, 68, 68, 0.18);
+    color: #b91c1c;
+    transform: translateY(-1px);
+}
+
+/* Department Breakdown in Rate Cards */
+.dept-breakdown {
+    margin-top: 12px;
+    border-top: 1px dashed #e2e8f0;
+    padding-top: 10px;
+    width: 100%;
+}
+
+.dept-breakdown-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #64748b;
+    margin: 0 0 8px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.dept-scroll {
+    max-height: 90px;
+    overflow-y: auto;
+    padding-right: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.dept-scroll::-webkit-scrollbar { width: 4px; }
+.dept-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+.dept-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.dept-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+.dept-row-btn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    border-radius: 6px;
+    padding: 3px 6px;
+    margin: 0 -4px;
+    transition: background 0.15s;
+    min-width: 0;
+}
+
+.dept-row-btn:hover {
+    background: rgba(99, 102, 241, 0.07);
+}
+
+.dept-row-name {
+    color: #475569;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+}
+
+.dept-row-stats {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.dept-row-bar {
+    width: 36px;
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 2px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.dept-row-fill {
+    height: 100%;
+    border-radius: 2px;
+}
+
+.dept-row-fill.ontime { background: #10b981; }
+.dept-row-fill.late   { background: #f59e0b; }
+.dept-row-fill.absent { background: #ef4444; }
+
+.dept-row-rate {
+    font-weight: 700;
+    width: 34px;
+    text-align: right;
+    font-size: 0.74rem;
+    flex-shrink: 0;
+}
+
+.dept-row-rate.ontime { color: #10b981; }
+.dept-row-rate.late   { color: #f59e0b; }
+.dept-row-rate.absent { color: #ef4444; }
+
+.dept-row-btn .chevron {
+    font-size: 0.6rem;
+    color: #94a3b8;
+    margin-left: 2px;
+    opacity: 0;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+}
+
+.dept-row-btn:hover .chevron {
+    opacity: 1;
 }
 
 /* Charts Grid */
@@ -402,7 +567,7 @@ body {
 .chart-box {
     background: var(--card-bg);
     padding: 24px;
-    border-radius: 12px;
+    border-radius: 14px;
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
     border: 1px solid #f1f5f9;
     min-width: 0;
@@ -452,15 +617,22 @@ body {
     border-radius: 16px;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     width: min(92vw, 800px);
-    padding: 32px;
+    padding: 30px;
     transform: translateY(20px) scale(0.95);
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     max-height: 90vh;
     overflow-y: auto;
+    box-sizing: border-box;
 }
 
 .custom-modal.show .custom-modal-content {
     transform: translateY(0) scale(1);
+}
+
+.custom-modal-content-wide {
+    width: min(96vw, 1080px) !important;
+    max-height: 92vh;
+    padding: 24px 28px !important;
 }
 
 .custom-modal-header {
@@ -468,6 +640,7 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 6px;
+    gap: 12px;
 }
 
 .custom-modal-header h3 {
@@ -480,9 +653,10 @@ body {
 }
 
 .custom-modal-subtitle {
-    margin: 0 0 24px;
-    font-size: 0.92rem;
+    margin: 0 0 20px;
+    font-size: 0.9rem;
     color: var(--muted);
+    line-height: 1.4;
 }
 
 .close-modal-btn {
@@ -492,6 +666,8 @@ body {
     cursor: pointer;
     line-height: 1;
     transition: color 0.2s ease;
+    flex-shrink: 0;
+    padding: 2px 4px;
 }
 
 .close-modal-btn:hover {
@@ -501,14 +677,14 @@ body {
 .custom-modal-footer {
     display: flex;
     justify-content: flex-end;
-    margin-top: 24px;
+    margin-top: 20px;
 }
 
 .custom-modal-close-btn {
     background: #f1f5f9;
     color: #475569;
     border: 1px solid #e2e8f0;
-    padding: 10px 20px;
+    padding: 9px 20px;
     font-size: 0.85rem;
     font-weight: 600;
     border-radius: 8px;
@@ -543,7 +719,7 @@ body {
     background-color: #f8fafc;
     color: #475569;
     font-weight: 600;
-    padding: 14px 16px;
+    padding: 13px 16px;
     border-bottom: 1px solid #f1f5f9;
     text-transform: uppercase;
     font-size: 0.75rem;
@@ -554,7 +730,7 @@ body {
 }
 
 .table td {
-    padding: 14px 16px;
+    padding: 13px 16px;
     border-bottom: 1px solid #f1f5f9;
     color: #334155;
     vertical-align: middle;
@@ -605,6 +781,7 @@ body {
     font-weight: 500;
     color: #475569;
     border: 1px solid #e2e8f0;
+    white-space: nowrap;
 }
 
 .class-badge .divider {
@@ -636,17 +813,9 @@ body {
 }
 
 /* Risk colors */
-.mini-bar.critical-risk {
-    background-color: var(--rose, #f43f5e);
-}
-
-.mini-bar.high-risk {
-    background-color: var(--danger, #ef4444);
-}
-
-.mini-bar.medium-risk {
-    background-color: var(--warning, #f59e0b);
-}
+.mini-bar.critical-risk { background-color: var(--rose, #f43f5e); }
+.mini-bar.high-risk     { background-color: var(--danger, #ef4444); }
+.mini-bar.medium-risk   { background-color: var(--warning, #f59e0b); }
 
 /* Badges */
 .risk-badge {
@@ -657,22 +826,12 @@ body {
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
+    white-space: nowrap;
 }
 
-.risk-badge.critical-risk {
-    background-color: #fff1f2;
-    color: var(--rose, #f43f5e);
-}
-
-.risk-badge.high-risk {
-    background-color: #fee2e2;
-    color: var(--danger, #ef4444);
-}
-
-.risk-badge.medium-risk {
-    background-color: #fef3c7;
-    color: var(--warning, #f59e0b);
-}
+.risk-badge.critical-risk { background-color: #fff1f2; color: var(--rose, #f43f5e); }
+.risk-badge.high-risk     { background-color: #fee2e2; color: var(--danger, #ef4444); }
+.risk-badge.medium-risk   { background-color: #fef3c7; color: var(--warning, #f59e0b); }
 
 .text-right {
     text-align: right;
@@ -684,32 +843,524 @@ body {
     padding: 40px 16px !important;
 }
 
-/* ========== Responsive Breakpoints ========== */
-
-@media (max-width: 1100px) {
-    .rates-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
+/* Rate Students Modal: Tabs */
+.rsm-tabs-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    background: #f8fafc;
+    padding: 5px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
 }
 
-@media (max-width: 1024px) {
-    .content {
-        padding: 20px 24px;
+.rsm-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 14px;
+    border: 1px solid transparent;
+    background: transparent;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.rsm-tab:hover {
+    background: rgba(255,255,255,0.8);
+    color: #334155;
+}
+
+.rsm-tab.active.rsm-tab-ontime {
+    background: #ffffff;
+    color: #059669;
+    box-shadow: 0 2px 6px rgba(16,185,129,0.15);
+    border-color: #10b981;
+}
+
+.rsm-tab.active.rsm-tab-late {
+    background: #ffffff;
+    color: #d97706;
+    box-shadow: 0 2px 6px rgba(245,158,11,0.15);
+    border-color: #f59e0b;
+}
+
+.rsm-tab.active.rsm-tab-absent {
+    background: #ffffff;
+    color: #dc2626;
+    box-shadow: 0 2px 6px rgba(239,68,68,0.15);
+    border-color: #ef4444;
+}
+
+.rsm-tab-badge {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.rsm-tab.active.rsm-tab-ontime .rsm-tab-badge { background: #ecfdf5; color: #059669; }
+.rsm-tab.active.rsm-tab-late .rsm-tab-badge   { background: #fffbeb; color: #d97706; }
+.rsm-tab.active.rsm-tab-absent .rsm-tab-badge { background: #fef2f2; color: #dc2626; }
+
+/* Rate Students Modal: Toolbar */
+.rsm-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.rsm-search-box {
+    position: relative;
+    flex: 1 1 240px;
+    min-width: 200px;
+}
+
+.rsm-search-box input {
+    width: 100%;
+    padding: 8px 30px 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    font-size: 0.85rem;
+    font-family: inherit;
+    background: #ffffff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+}
+
+.rsm-search-box input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+}
+
+.rsm-search-box .clear-search-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    color: #94a3b8;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.rsm-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.rsm-select {
+    padding: 7px 12px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    font-size: 0.82rem;
+    font-family: inherit;
+    background: #ffffff;
+    color: #334155;
+    cursor: pointer;
+}
+
+.rsm-select:focus {
+    outline: none;
+    border-color: #6366f1;
+}
+
+.rsm-view-mode-toggle {
+    display: inline-flex;
+    background: #f1f5f9;
+    border-radius: 8px;
+    padding: 2px;
+    border: 1px solid #e2e8f0;
+}
+
+.rsm-mode-btn {
+    padding: 6px 12px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    display: inline-block;
+    transition: all 0.15s;
+}
+
+.rsm-mode-btn.active {
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.rsm-btn-export {
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #475569;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+}
+
+.rsm-btn-export:hover {
+    background: #f8fafc;
+    color: #0f172a;
+    border-color: #cbd5e1;
+}
+
+.badge-status {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.badge-status.ontime {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+}
+
+.badge-status.late {
+    background: #fffbeb;
+    color: #d97706;
+    border: 1px solid #fde68a;
+}
+
+.badge-status.absent {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.rsm-loading-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(2px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    z-index: 20;
+    border-radius: 8px;
+}
+
+.rsm-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #e2e8f0;
+    border-top: 3px solid #6366f1;
+    border-radius: 50%;
+    animation: rsm-spin 0.8s linear infinite;
+}
+
+@keyframes rsm-spin {
+    to { transform: rotate(360deg); }
+}
+
+.rsm-empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #64748b;
+}
+
+.rsm-empty-state h4 {
+    margin: 0 0 4px;
+    color: #1e293b;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.rsm-empty-state p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+.rsm-footer-info {
+    font-size: 0.84rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* Department Drill-Down Modal */
+#deptDrillModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    z-index: 10500;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(3px);
+}
+
+#deptDrillModal.show { display: flex; }
+
+.dept-drill-box {
+    background: #fff;
+    border-radius: 18px;
+    width: 94%;
+    max-width: 560px;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 32px 80px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    animation: ddSlideIn .22s cubic-bezier(.4, 0, .2, 1);
+    box-sizing: border-box;
+}
+
+@keyframes ddSlideIn {
+    from { opacity: 0; transform: translateY(18px) scale(.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.dept-drill-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    gap: 10px;
+}
+
+.dept-drill-header h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.dept-drill-header .dd-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 11px;
+    border-radius: 999px;
+    font-size: 0.73rem;
+    font-weight: 700;
+    margin-left: 6px;
+    white-space: nowrap;
+}
+
+.dd-badge.ontime { background: #dcfce7; color: #15803d; }
+.dd-badge.late   { background: #fef9c3; color: #854d0e; }
+.dd-badge.absent { background: #fee2e2; color: #991b1b; }
+
+.dept-drill-close {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    color: #94a3b8;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px 6px;
+    border-radius: 6px;
+    transition: background .15s;
+    flex-shrink: 0;
+}
+
+.dept-drill-close:hover { background: #f1f5f9; color: #475569; }
+
+.dd-top-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 24px;
+    background: #f8fafc;
+    border-bottom: 1px solid #f1f5f9;
+    flex-wrap: wrap;
+}
+
+.dd-btn-view-students {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.dd-btn-view-students:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #94a3b8;
+}
+
+.dept-drill-body {
+    overflow-y: auto;
+    padding: 16px 24px 20px;
+    flex: 1;
+}
+
+.dd-section-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    border: 1px solid #f1f5f9;
+    background: #fafafa;
+    transition: box-shadow .15s, border-color .15s;
+}
+
+.dd-section-row:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .07);
+    border-color: #e2e8f0;
+}
+
+.dd-section-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1e293b;
+    word-break: break-word;
+}
+
+.dd-section-sub {
+    font-size: 0.72rem;
+    color: #64748b;
+    margin-top: 1px;
+}
+
+.dd-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 130px;
+    justify-content: flex-end;
+}
+
+.dd-bar-track {
+    width: 80px;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.dd-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width .4s ease;
+}
+
+.dd-pct {
+    font-size: 0.82rem;
+    font-weight: 800;
+    min-width: 38px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.dd-sec-view-btn {
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #475569;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-block;
+    transition: all 0.15s;
+    margin-left: 4px;
+    flex-shrink: 0;
+}
+
+.dd-sec-view-btn:hover {
+    background: #e0e7ff;
+    color: #4338ca;
+    border-color: #c7d2fe;
+}
+
+.dd-empty {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.88rem;
+    padding: 30px 0;
+}
+
+.dept-drill-footer {
+    padding: 14px 24px;
+    border-top: 1px solid #f1f5f9;
+    text-align: right;
+}
+
+.dept-drill-footer button {
+    padding: 9px 22px;
+    background: #f1f5f9;
+    color: #475569;
+    border: none;
+    border-radius: 9px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background .15s;
+}
+
+.dept-drill-footer button:hover { background: #e2e8f0; }
+
+/* ========== Comprehensive Responsive Breakpoints ========== */
+
+/* Laptop & Desktop screens below 1340px:
+   Because the fixed sidebar takes 294px on desktop, screen widths under 1340px
+   have less than 1040px content width. 2 columns for rates and 1 column for charts
+   prevent squishing while keeping cards spacious and legible. */
+@media (max-width: 1339px) {
+    .rates-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
     }
 
     .charts-grid {
         grid-template-columns: 1fr;
+        gap: 20px;
     }
 }
 
+/* Tablet & Mobile Nav boundary */
 @media (max-width: 960px) {
-    .content {
-        padding: 16px 20px;
-    }
-
     .welcome-banner {
         flex-direction: column;
         align-items: flex-start;
+        gap: 12px;
     }
 
     .active-term-badge {
@@ -717,13 +1368,10 @@ body {
     }
 }
 
+/* Tablets / Large Phones */
 @media (max-width: 768px) {
     html {
         font-size: 15px;
-    }
-
-    .content {
-        padding: 12px;
     }
 
     .header {
@@ -737,25 +1385,44 @@ body {
     .rates-grid {
         grid-template-columns: 1fr;
         gap: 12px;
+        margin-top: 18px;
     }
 
     .rate-card {
-        padding: 16px;
+        padding: 18px 16px;
     }
 
     .rate-card .rate-value {
-        font-size: 1.8rem;
+        font-size: 1.85rem;
+    }
+
+    .charts-grid {
+        gap: 16px;
+        margin-top: 24px;
+        margin-bottom: 24px;
+    }
+
+    .chart-box {
+        padding: 18px 16px;
+        border-radius: 12px;
     }
 
     .chart-container {
-        height: 250px;
+        height: 260px;
     }
 
     .custom-modal-content {
         width: calc(100% - 24px);
-        padding: 20px;
+        padding: 20px 16px;
         border-radius: 14px;
-        max-height: 85vh;
+        max-height: 88vh;
+    }
+
+    .custom-modal-content-wide {
+        width: calc(100% - 20px) !important;
+        padding: 18px 14px !important;
+        border-radius: 14px;
+        max-height: 90vh;
     }
 
     .custom-modal-header h3 {
@@ -767,48 +1434,126 @@ body {
         margin-bottom: 16px;
     }
 
-    .table th:nth-child(3),
-    .table td:nth-child(3),
-    .table th:nth-child(4),
-    .table td:nth-child(4) {
+    /* ONLY hide columns in At-Risk modal, preserve full attendance logging columns in Rate Students modal */
+    #atRiskModal .table th:nth-child(3),
+    #atRiskModal .table td:nth-child(3),
+    #atRiskModal .table th:nth-child(4),
+    #atRiskModal .table td:nth-child(4) {
         display: none;
     }
 
     .table th,
     .table td {
-        padding: 10px 8px;
+        padding: 11px 10px;
         font-size: 0.85rem;
+    }
+
+    .rsm-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .rsm-search-box {
+        width: 100%;
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+
+    .rsm-filter-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .rsm-select {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .rsm-view-mode-toggle {
+        width: 100%;
+        display: flex;
+    }
+
+    .rsm-mode-btn {
+        flex: 1;
+        text-align: center;
+        padding: 6px 4px;
+        font-size: 0.74rem;
+    }
+
+    .rsm-btn-export {
+        width: 100%;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #rsmTable {
+        min-width: 620px;
     }
 }
 
+/* Small Screens / Phablets */
+@media (max-width: 640px) {
+    .active-term-badge {
+        white-space: normal;
+        word-break: break-word;
+        font-size: 0.78rem;
+        padding: 7px 12px;
+    }
+
+    .rsm-tabs-bar {
+        gap: 5px;
+        padding: 4px;
+        border-radius: 10px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .rsm-tabs-bar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .rsm-tab {
+        padding: 7px 10px;
+        font-size: 0.78rem;
+        gap: 6px;
+        white-space: nowrap;
+        flex: 1 0 auto;
+    }
+
+    .rsm-tab-badge {
+        font-size: 0.68rem;
+        padding: 2px 6px;
+    }
+}
+
+/* Mobile Phones */
 @media (max-width: 480px) {
     html {
         font-size: 14px;
     }
 
-    .content {
-        padding: 6px;
-    }
-
     .welcome-banner {
-        padding: 14px;
-        border-radius: 10px;
+        padding: 16px 14px;
+        border-radius: 12px;
         margin-bottom: 16px;
     }
 
-    .welcome-banner h1 {
-        font-size: 1.1rem;
-    }
-
     .rates-grid {
-        gap: 8px;
-        margin-top: 16px;
+        gap: 10px;
+        margin-top: 14px;
     }
 
     .rate-card {
-        padding: 12px;
-        gap: 10px;
-        border-radius: 10px;
+        padding: 14px 12px;
+        gap: 12px;
+        border-radius: 12px;
     }
 
     .donut-chart-wrapper {
@@ -821,8 +1566,8 @@ body {
     }
 
     .rate-card .rate-label {
-        font-size: 0.75rem;
-        margin-bottom: 6px;
+        font-size: 0.76rem;
+        margin-bottom: 4px;
     }
 
     .rate-card .rate-sub {
@@ -830,7 +1575,7 @@ body {
     }
 
     .rate-card .rate-value {
-        font-size: 1.5rem;
+        font-size: 1.6rem;
     }
 
     .charts-grid {
@@ -840,52 +1585,119 @@ body {
     }
 
     .chart-box {
-        padding: 12px;
-        border-radius: 10px;
+        padding: 14px 12px;
+        border-radius: 12px;
     }
 
     .chart-box h3 {
         font-size: 0.95rem;
-        margin-bottom: 12px;
+        margin-bottom: 14px;
     }
 
     .chart-container {
-        height: 210px;
+        height: 220px;
     }
 
     .custom-modal-content {
-        width: 100%;
-        max-height: 95vh;
+        width: calc(100% - 12px);
+        max-height: 94vh;
         border-radius: 12px;
-        padding: 14px;
+        padding: 14px 12px;
+    }
+
+    .custom-modal-content-wide {
+        width: calc(100% - 10px) !important;
+        max-height: 94vh;
+        border-radius: 12px;
+        padding: 14px 10px !important;
     }
 
     .custom-modal-close-btn {
         padding: 8px 16px;
         font-size: 0.8rem;
     }
+
+    #atRiskModal .rate-progress-cell {
+        width: 90px;
+    }
+
+    .dept-drill-box {
+        width: calc(100% - 14px);
+        max-height: 92vh;
+        border-radius: 14px;
+    }
+
+    .dept-drill-header {
+        padding: 16px 14px 12px;
+    }
+
+    .dept-drill-header h3 {
+        font-size: 0.95rem;
+    }
+
+    .dd-top-actions {
+        padding: 8px 14px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+    }
+
+    .dd-btn-view-students {
+        width: 100%;
+        text-align: center;
+    }
+
+    .dept-drill-body {
+        padding: 12px 14px 16px;
+    }
+
+    .dd-section-row {
+        padding: 8px 10px;
+        gap: 8px;
+    }
+
+    .dd-section-label {
+        font-size: 0.8rem;
+    }
+
+    .dd-section-sub {
+        font-size: 0.7rem;
+    }
+
+    .dd-bar-wrap {
+        min-width: 0;
+        gap: 6px;
+    }
+
+    .dd-bar-track {
+        width: 46px;
+    }
+
+    .dd-pct {
+        font-size: 0.75rem;
+        min-width: 32px;
+    }
+
+    .dd-sec-view-btn {
+        padding: 3px 6px;
+        font-size: 0.68rem;
+        margin-left: 2px;
+    }
 }
 
+/* Very Small Mobile (< 360px) */
 @media (max-width: 360px) {
-    .content {
-        padding: 4px;
-    }
-
     .welcome-banner {
-        padding: 10px;
-    }
-
-    .welcome-banner h1 {
-        font-size: 1rem;
+        padding: 12px 10px;
     }
 
     .rate-card {
-        padding: 10px;
+        padding: 12px 10px;
         gap: 8px;
     }
 
     .rate-card .rate-value {
-        font-size: 1.3rem;
+        font-size: 1.4rem;
     }
 
     .chart-box {
@@ -893,6 +1705,10 @@ body {
     }
 
     .chart-container {
-        height: 180px;
+        height: 190px;
+    }
+
+    .rsm-filter-group {
+        grid-template-columns: 1fr;
     }
 }

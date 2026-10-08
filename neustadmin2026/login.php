@@ -1,5 +1,6 @@
 <?php
 include('../db.php');
+include('../auth_lockout.php');
 include('admin_db.php');
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -21,41 +22,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($username === '' || $password === '') {
             $error = 'Please provide username and password.';
         } else {
-            // Admin table and default-account provisioning removed from login flow.
+            $attempt_state = login_attempt_state('admin', $username);
+            if ($attempt_state['blocked']) {
+                $error = login_attempt_message($attempt_state);
+            } else {
+                // Admin table and default-account provisioning removed from login flow.
 
-            // Use prepared statement to prevent SQL injection
-            if ($stmt = $admin_conn->prepare('SELECT username, password_hash, email, role, is_first_login FROM admins WHERE username = ? LIMIT 1')) {
-                $stmt->bind_param('s', $username);
-                $stmt->execute();
-                $stmt->store_result();
-                if ($stmt->num_rows === 1) {
-                    $stmt->bind_result($db_username, $db_password_hash, $db_email, $db_role, $db_is_first_login);
-                    $stmt->fetch();
-                    if (is_string($db_password_hash) && password_verify($password, $db_password_hash)) {
-                        $_SESSION['2fa_pending_admin'] = $db_username;
-                        $_SESSION['2fa_admin_email'] = $db_email;
-                        $_SESSION['2fa_pending_role'] = $db_role;
-                        $_SESSION['2fa_pending_is_first_login'] = $db_is_first_login;
-                        $otp = sprintf("%06d", mt_rand(1, 999999));
-                        $_SESSION['admin_2fa_code'] = $otp;
-                        
-                        require_once '../mailer.php';
-                        if (!empty($db_email)) {
-                            send_admin_otp($db_email, $otp);
+                // Use prepared statement to prevent SQL injection
+                if ($stmt = $admin_conn->prepare('SELECT username, password_hash, email, role, is_first_login FROM admins WHERE username = ? LIMIT 1')) {
+                    $stmt->bind_param('s', $username);
+                    $stmt->execute();
+                    $stmt->store_result();
+                    if ($stmt->num_rows === 1) {
+                        $stmt->bind_result($db_username, $db_password_hash, $db_email, $db_role, $db_is_first_login);
+                        $stmt->fetch();
+                        if (is_string($db_password_hash) && password_verify($password, $db_password_hash)) {
+                            login_attempt_reset('admin', $username);
+                            $_SESSION['2fa_pending_admin'] = $db_username;
+                            $_SESSION['2fa_admin_email'] = $db_email;
+                            $_SESSION['2fa_pending_role'] = $db_role;
+                            $_SESSION['2fa_pending_is_first_login'] = $db_is_first_login;
+                            $otp = sprintf("%06d", mt_rand(1, 999999));
+                            $_SESSION['admin_2fa_code'] = $otp;
+                            
+                            require_once '../mailer.php';
+                            if (!empty($db_email)) {
+                                send_admin_otp($db_email, $otp);
+                            }
+                            
+                            $stmt->close();
+                            header('Location: verify_otp.php');
+                            exit;
+                        } else {
+                            $error = 'Invalid username or password.';
+                            login_attempt_failed('admin', $username);
                         }
-                        
-                        $stmt->close();
-                        header('Location: verify_otp.php');
-                        exit;
                     } else {
                         $error = 'Invalid username or password.';
+                        login_attempt_failed('admin', $username);
                     }
+                    $stmt->close();
                 } else {
-                    $error = 'Invalid username or password.';
+                    $error = 'Authentication temporarily unavailable.';
                 }
-                $stmt->close();
-            } else {
-                $error = 'Authentication temporarily unavailable.';
             }
         }
     }
@@ -70,6 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Admin Login – NEUST Gatepass</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     <style>
         :root {
             --bg1: #eef2ff;
@@ -268,6 +278,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <p class="lead">Sign in to manage schedules, students, and reports.</p>
             </div>
 
+            <?php if (!empty($_GET['expired'])): ?>
+                <div class="notice-expired" style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;padding:12px 14px;border-radius:10px;margin-bottom:16px;font-size:14px;display:flex;align-items:center;gap:10px;">
+                    <i class="fa-solid fa-clock-rotate-left" style="font-size:16px;color:#d97706;"></i>
+                    <span>Your session has expired due to inactivity. Please sign in again.</span>
+                </div>
+            <?php endif; ?>
+
             <?php if ($error): ?>
                 <div class="error"><?= htmlspecialchars($error) ?></div>
             <?php endif; ?>
@@ -281,7 +298,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label for="password">Password</label>
                 <div class="pw">
                     <input id="password" name="password" type="password" autocomplete="current-password" required>
-                    <button type="button" class="toggle" aria-pressed="false" aria-label="Show password">Show</button>
+                    <button type="button" class="toggle" aria-pressed="false" aria-label="Show password"><i class="fa-solid fa-eye"></i></button>
                 </div>
 
                 <button type="submit" class="submit">Sign in</button>
@@ -294,14 +311,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             var pw = document.getElementById('password');
             var btn = document.querySelector('.toggle');
             if (!pw || !btn) return;
-            btn.addEventListener('click', function (e) {
-                var type = pw.getAttribute('type') === 'password' ? 'text' : 'password';
-                pw.setAttribute('type', type);
-                btn.textContent = type === 'password' ? 'Show' : 'Hide';
-                btn.setAttribute('aria-pressed', type !== 'password');
+            btn.addEventListener('click', function () {
+                var show = pw.getAttribute('type') === 'password';
+                pw.setAttribute('type', show ? 'text' : 'password');
+                btn.querySelector('i').className = show ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+                btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+                btn.setAttribute('aria-pressed', show);
             });
         })();
     </script>
 </body>
 
+</html>
 </html>

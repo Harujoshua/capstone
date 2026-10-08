@@ -55,8 +55,80 @@ if ($c_res) {
     }
 }
 
-// 3. Upcoming Classes
+// 3. Today's classes with computed attendance status
 $dow = date('l');
+$today_date = date('Y-m-d');
+$today_classes_q = $conn->query("SELECT s.id, s.subject, s.start_time, s.end_time, s.room, COALESCE(f.name, s.teacher) as teacher_display
+                                 FROM schedules s
+                                 JOIN schedule_students ss ON s.id = ss.schedule_id
+                                 LEFT JOIN faculty f ON s.teacher_id = f.id
+                                 WHERE ss.student_id = $student_id AND s.day LIKE '%$dow%'
+                                 ORDER BY s.start_time ASC");
+$today_classes = [];
+if ($today_classes_q) {
+    while ($row = $today_classes_q->fetch_assoc()) {
+        $schedule_id = intval($row['id']);
+        $start_ts    = strtotime($today_date . ' ' . $row['start_time']);
+        $end_ts      = strtotime($today_date . ' ' . $row['end_time']);
+        $now_ts      = time();
+
+        // Grace period thresholds (use class_sessions if available, else defaults)
+        $sess_q = $conn->query("SELECT * FROM class_sessions WHERE schedule_id = $schedule_id AND session_date = CURDATE()");
+        if ($sess_q && $sess_q->num_rows > 0) {
+            $sess = $sess_q->fetch_assoc();
+            $actual_start_ts  = strtotime($sess['actual_start_time']);
+            $present_cutoff   = $actual_start_ts + ($sess['late_grace_period'] * 60);
+            $absent_threshold = $actual_start_ts + ($sess['absent_grace_period'] * 60);
+        } else {
+            $present_cutoff   = $start_ts + (15 * 60);
+            $absent_threshold = $end_ts;
+        }
+
+        // Card tap check
+        $rfid_q = $conn->query("SELECT rfid_uid FROM students WHERE id = $student_id LIMIT 1");
+        $rfid_row = $rfid_q ? $rfid_q->fetch_assoc() : null;
+        $rfid = $rfid_row ? $rfid_row['rfid_uid'] : '';
+
+        $log_q = $conn->query("SELECT time_in FROM logs WHERE rfid_uid='" . $conn->real_escape_string($rfid) . "' AND DATE(time_in)='$today_date' AND time_in >= '" . date('Y-m-d H:i:s', $start_ts - 10800) . "' ORDER BY time_in ASC LIMIT 1");
+        $log   = $log_q ? $log_q->fetch_assoc() : null;
+
+        // Excuse check for today
+        $ex_q = $conn->query("SELECT status FROM excuse_letters WHERE student_id = $student_id AND schedule_id = $schedule_id AND date_absent = '$today_date' ORDER BY id DESC LIMIT 1");
+        $ex   = $ex_q ? $ex_q->fetch_assoc() : null;
+        $excuse_status = $ex ? $ex['status'] : null;
+
+        // Decision flow
+        if ($log) {
+            $tap_ts = strtotime($log['time_in']);
+            if ($tap_ts <= $present_cutoff) {
+                $final_status = 'Present';
+            } elseif ($tap_ts <= $absent_threshold) {
+                $final_status = 'Late';
+            } else {
+                $final_status = ($excuse_status === 'Approved') ? 'Excused' : 'Absent';
+            }
+            $card_tap_time = $log['time_in'];
+        } else {
+            $card_tap_time = null;
+            if ($excuse_status === 'Approved') {
+                $final_status = 'Excused';
+            } elseif ($now_ts > $absent_threshold) {
+                $final_status = 'Absent';
+            } elseif ($excuse_status === 'Pending') {
+                $final_status = 'Excuse Pending';
+            } else {
+                $final_status = 'Pending';
+            }
+        }
+
+        $row['final_status']   = $final_status;
+        $row['excuse_status']  = $excuse_status;
+        $row['card_tap_time']  = $card_tap_time;
+        $today_classes[]       = $row;
+    }
+}
+
+// 3b. Upcoming classes (not yet started)
 $upcoming_q = $conn->query("SELECT s.*, COALESCE(f.name, s.teacher) as teacher_display 
                             FROM schedules s 
                             JOIN schedule_students ss ON s.id = ss.schedule_id 
@@ -92,7 +164,7 @@ foreach ($course_stats as $cs) {
         $alerts[] = [
             'type' => 'warning',
             'title' => 'Low Attendance: ' . htmlspecialchars($cs['subject']),
-            'message' => "Your attendance rate for this course is only " . round($rate, 1) . "%."
+            'message' => "Your attendance rate for this course is only " . round($rate, 1) . "%." 
         ];
     }
 }
@@ -124,7 +196,11 @@ if ($streak_q) {
 $perfect_attendance = ($attendance_rate == 100 && $total_records > 0);
 
 // 7. Student's submitted excuse letters
-$excuses_q = $conn->query("SELECT el.*, sc.subject FROM excuse_letters el JOIN schedules sc ON el.schedule_id = sc.id WHERE el.student_id = $student_id ORDER BY el.created_at DESC LIMIT 10");
+$excuses_q = $conn->query("SELECT el.*, sc.subject, a.status AS attendance_status
+                            FROM excuse_letters el
+                            JOIN schedules sc ON el.schedule_id = sc.id
+                            LEFT JOIN attendance a ON a.student_id = el.student_id AND a.schedule_id = el.schedule_id AND a.attendance_date = el.date_absent
+                            WHERE el.student_id = $student_id ORDER BY el.created_at DESC LIMIT 10");
 $my_excuses = [];
 if ($excuses_q) {
     while ($row = $excuses_q->fetch_assoc()) {
@@ -272,22 +348,52 @@ if ($excuses_q) {
                 </div>
             </div>
 
-            <!-- Upcoming Classes -->
+            <!-- Today's Class Status -->
             <div class="card col-4">
-                <div class="card-title">Upcoming Classes</div>
-                <?php if (empty($upcoming_classes)): ?>
-                    <p style="color: var(--text-muted); font-size: 0.875rem;">No more classes scheduled for today.</p>
+                <div class="card-title"><i class="fa-solid fa-calendar-day" style="margin-right:0.4rem;"></i>Today's Class Status</div>
+                <?php if (empty($today_classes)): ?>
+                    <p style="color: var(--text-muted); font-size: 0.875rem;">No classes scheduled for today.</p>
                 <?php else: ?>
-                    <?php foreach ($upcoming_classes as $uc): ?>
-                        <div class="activity-item">
-                            <div class="activity-icon" style="background: #eef2ff; color: var(--primary);">
-                                <i class="fa-solid fa-clock-rotate-left"></i>
+                    <?php foreach ($today_classes as $tc):
+                        $fs  = $tc['final_status'];
+                        $fsl = strtolower(str_replace(' ', '-', $fs));
+                        $status_styles = [
+                            'present'        => ['bg'=>'#d1fae5','col'=>'#065f46','icon'=>'fa-circle-check'],
+                            'late'           => ['bg'=>'#fef3c7','col'=>'#92400e','icon'=>'fa-clock'],
+                            'absent'         => ['bg'=>'#fee2e2','col'=>'#7f1d1d','icon'=>'fa-circle-xmark'],
+                            'excused'        => ['bg'=>'#e0f2fe','col'=>'#0369a1','icon'=>'fa-file-circle-check'],
+                            'excuse-pending' => ['bg'=>'#fef3c7','col'=>'#92400e','icon'=>'fa-hourglass-half'],
+                            'pending'        => ['bg'=>'#f1f5f9','col'=>'#64748b','icon'=>'fa-hourglass'],
+                        ];
+                        $ss = $status_styles[$fsl] ?? $status_styles['pending'];
+                    ?>
+                    <div class="activity-item" style="margin-bottom:0.75rem; align-items:flex-start;">
+                        <div class="activity-icon" style="background:<?= $ss['bg'] ?>; color:<?= $ss['col'] ?>; flex-shrink:0;">
+                            <i class="fa-solid <?= $ss['icon'] ?>"></i>
+                        </div>
+                        <div class="activity-details" style="flex:1; min-width:0;">
+                            <div class="course" style="font-weight:600; font-size:0.875rem;"><?= htmlspecialchars($tc['subject']) ?></div>
+                            <div class="time" style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">
+                                <?= date('h:i A', strtotime($tc['start_time'])) ?> &mdash; Room <?= htmlspecialchars($tc['room'] ?? 'N/A') ?>
                             </div>
-                            <div class="activity-details">
-                                <div class="course"><?= htmlspecialchars($uc['subject']) ?></div>
-                                <div class="time"><?= date('h:i A', strtotime($uc['start_time'])) ?> — Room <?= htmlspecialchars($uc['room'] ?? 'N/A') ?></div>
+                            <div style="margin-top:5px; display:flex; flex-wrap:wrap; gap:4px; align-items:center;">
+                                <?php if ($tc['card_tap_time']): ?>
+                                    <span style="font-size:0.72rem; background:#d1fae5; color:#065f46; padding:1px 7px; border-radius:99px; font-weight:600;"><i class="fa-solid fa-id-card"></i> Tapped <?= date('h:i A', strtotime($tc['card_tap_time'])) ?></span>
+                                <?php else: ?>
+                                    <span style="font-size:0.72rem; background:#f1f5f9; color:#94a3b8; padding:1px 7px; border-radius:99px;"><i class="fa-solid fa-ban"></i> No Card Tap</span>
+                                <?php endif; ?>
+                                <?php if ($tc['excuse_status']): ?>
+                                    <?php
+                                        $ec = strtolower($tc['excuse_status']);
+                                        $ebg = match($ec) { 'approved'=>'#d1fae5','pending'=>'#fef3c7','rejected'=>'#fee2e2', default=>'#f1f5f9' };
+                                        $efc = match($ec) { 'approved'=>'#065f46','pending'=>'#92400e','rejected'=>'#7f1d1d', default=>'#64748b' };
+                                    ?>
+                                    <span style="font-size:0.72rem; background:<?= $ebg ?>; color:<?= $efc ?>; padding:1px 7px; border-radius:99px; font-weight:600;">Excuse: <?= htmlspecialchars($tc['excuse_status']) ?></span>
+                                <?php endif; ?>
+                                <span style="font-size:0.75rem; font-weight:700; background:<?= $ss['bg'] ?>; color:<?= $ss['col'] ?>; padding:2px 9px; border-radius:99px;"><?= htmlspecialchars($fs) ?></span>
                             </div>
                         </div>
+                    </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </div>
@@ -346,7 +452,8 @@ if ($excuses_q) {
                                 <th>Date of Absence</th>
                                 <th>Reason</th>
                                 <th>Submitted On</th>
-                                <th>Status</th>
+                                <th>Excuse Status</th>
+                                <th>Final Attendance</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -369,6 +476,23 @@ if ($excuses_q) {
                                         $pill_style = $pill_colors[$ex_status] ?? '';
                                     ?>
                                     <span class="status-pill" style="<?= $pill_style ?>"><?= htmlspecialchars($ex['status']) ?></span>
+                                </td>
+                                <td>
+                                    <?php
+                                        $att_s = $ex['attendance_status'] ?? null;
+                                        if ($att_s) {
+                                            $att_pill = match(strtolower($att_s)) {
+                                                'present' => 'background:#d1fae5;color:#065f46;',
+                                                'late'    => 'background:#fef3c7;color:#92400e;',
+                                                'absent'  => 'background:#fee2e2;color:#7f1d1d;',
+                                                'excused' => 'background:#e0f2fe;color:#0369a1;',
+                                                default   => 'background:#f1f5f9;color:#64748b;',
+                                            };
+                                            echo '<span class="status-pill" style="' . $att_pill . '">' . htmlspecialchars($att_s) . '</span>';
+                                        } else {
+                                            echo '<span style="color:var(--text-muted);font-size:0.78rem;">—</span>';
+                                        }
+                                    ?>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -405,7 +529,7 @@ if ($excuses_q) {
     <div id="excuseModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeExcuseModal()">&times;</span>
-            <h2 style="margin-top:0; margin-bottom: 1rem;">Submit Excuse Letter</h2>
+            <h2 style="margin-top:0; margin-bottom: 1rem;">Submit Excuse</h2>
             <form action="submit_excuse.php" method="POST" enctype="multipart/form-data">
                 <div class="form-group">
                     <label style="display:block; margin-bottom:0.5rem;">Select Course</label>
@@ -415,10 +539,7 @@ if ($excuses_q) {
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label style="display:block; margin-bottom:0.5rem;">Date of Absence</label>
-                    <input type="date" name="date_absent" class="form-control" required>
-                </div>
+                <input type="hidden" name="date_absent" value="<?= date('Y-m-d') ?>">
                 <div class="form-group">
                     <label style="display:block; margin-bottom:0.5rem;">Reason</label>
                     <textarea name="reason" class="form-control" rows="4" required></textarea>

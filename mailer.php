@@ -111,7 +111,7 @@ function send_parent_notification($toEmail, $parentName, $studentName, $status, 
                 <div style='padding: 30px;'>
                     <p style='font-size: 16px; margin-bottom: 20px;'>$greeting</p>
                     <p style='font-size: 16px; line-height: 1.5;'>
-                        This is to notify you that your child, <strong>$studentName</strong>, has $action the campus.
+                        This is to notify you that, <strong>$studentName</strong>, has $action the campus.
                     </p>
                     <table style='width: 100%; border-collapse: collapse; margin: 20px 0;'>
                         <tr>
@@ -131,7 +131,7 @@ function send_parent_notification($toEmail, $parentName, $studentName, $status, 
         ";
 
         // Provide plain text alternative for email clients that don't support HTML
-        $mail->AltBody = "$greeting\n\nThis is to notify you that your child, $studentName, has  $action the campus on $time.\n\nStatus: " . strtoupper($action) . "\n\nThis is an automated message. Please do not reply.";
+        $mail->AltBody = "$greeting\n\nThis is to notify you that, $studentName, has  $action the campus on $time.\n\nStatus: " . strtoupper($action) . "\n\nThis is an automated message. Please do not reply.";
 
         // Send the email
         $mail->send();
@@ -329,7 +329,7 @@ function send_admin_password_reset_otp($toEmail, $otp)
 /**
  * Sends an email with a setup link for a new faculty account to set their password.
  */
-function send_faculty_setup_email($toEmail, $facultyName, $token)
+function send_faculty_setup_email($toEmail, $facultyName, $token, $temporaryPassword = null)
 {
     if (empty($toEmail)) return false;
 
@@ -352,6 +352,10 @@ function send_faculty_setup_email($toEmail, $facultyName, $token)
         // Define the base URL dynamically or statically. 
         // For development, assuming localhost path. Adjust to production domain if needed.
         $setupLink = "http://" . $_SERVER['HTTP_HOST'] . "/neust_gatepass/faculty/set_password.php?token=" . $token;
+        $temporaryPasswordText = $temporaryPassword ? "
+                    <p style='font-size: 16px; line-height: 1.5;'>
+                        Your temporary password is: <strong style='font-size: 18px; letter-spacing: 0.04em;'>$temporaryPassword</strong>
+                    </p>" : '';
 
         $mail->Body = "
             <div style='font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;'>
@@ -363,6 +367,7 @@ function send_faculty_setup_email($toEmail, $facultyName, $token)
                     <p style='font-size: 16px; line-height: 1.5;'>
                         An administrator has created a faculty account for you. To complete your account setup, please set your password by clicking the button below:
                     </p>
+                    $temporaryPasswordText
                     <div style='text-align: center; margin: 30px 0;'>
                         <a href='$setupLink' style='background-color: #1a56db; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-size: 16px; font-weight: bold;'>Set My Password</a>
                     </div>
@@ -377,7 +382,8 @@ function send_faculty_setup_email($toEmail, $facultyName, $token)
             </div>
         ";
         
-        $mail->AltBody = "Dear $facultyName,\n\nAn administrator has created a faculty account for you. To set your password, please visit the following link:\n\n$setupLink\n\nThis link will expire in 24 hours.";
+        $altTemporaryPasswordText = $temporaryPassword ? "\n\nTemporary password: $temporaryPassword" : '';
+        $mail->AltBody = "Dear $facultyName,\n\nAn administrator has created a faculty account for you. To set your password, please visit the following link:\n\n$setupLink$altTemporaryPasswordText\n\nThis link will expire in 24 hours.";
         
         $mail->send();
         return true;

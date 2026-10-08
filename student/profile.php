@@ -16,9 +16,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $confirm_pw = $_POST['confirm_password'];
         
         if ($new_pw === $confirm_pw && !empty($new_pw)) {
-            $hash = password_hash($new_pw, PASSWORD_DEFAULT);
-            $conn->query("UPDATE students SET password_hash = '$hash' WHERE id = $student_id");
-            $success = "Password changed successfully.";
+            if (strlen($new_pw) < 6) {
+                $error = "Password must be at least 6 characters long.";
+            } else {
+                $hash = password_hash($new_pw, PASSWORD_DEFAULT);
+                $conn->query("UPDATE students SET password_hash = '$hash', is_first_login = 0 WHERE id = $student_id");
+                $_SESSION['student_is_first_login'] = false;
+                $success = "Password changed successfully.";
+            }
         } else {
             $error = "Passwords do not match or are empty.";
         }

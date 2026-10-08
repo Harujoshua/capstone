@@ -53,9 +53,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $late_grace = intval($_POST['late_grace_period']);
     $absent_grace = intval($_POST['absent_grace_period']);
     $actual_start = date('Y-m-d H:i:s');
-    
-    $ins_sql = "INSERT IGNORE INTO class_sessions (schedule_id, session_date, actual_start_time, late_grace_period, absent_grace_period) VALUES ($sid, '$selected_date', '$actual_start', $late_grace, $absent_grace)";
-    $conn->query($ins_sql);
+
+    // Fetch the schedule's start_time to validate timing
+    $sid_sched_res = $conn->query("SELECT start_time FROM schedules WHERE id = $sid LIMIT 1");
+    $sid_sched = $sid_sched_res ? $sid_sched_res->fetch_assoc() : null;
+    $sched_start_ts = $sid_sched ? strtotime($selected_date . ' ' . $sid_sched['start_time']) : 0;
+
+    if (time() >= $sched_start_ts) {
+        $ins_sql = "INSERT IGNORE INTO class_sessions (schedule_id, session_date, actual_start_time, late_grace_period, absent_grace_period) VALUES ($sid, '$selected_date', '$actual_start', $late_grace, $absent_grace)";
+        $conn->query($ins_sql);
+    } else {
+        // Class hasn't started yet — store an error message for display
+        $start_class_error = "Cannot start the late & absent period before the class begins (" . date('h:i A', $sched_start_ts) . ").";
+    }
 }
 
 $computed = [];
@@ -98,39 +108,94 @@ if ($schedule_id !== false) {
                 $rfid = $st['rfid_uid'];
                 $name = $st['name'];
 
+                // --- Excuse check for today ---
+                $excuse_q = $conn->query("
+                    SELECT id, status, reason FROM excuse_letters
+                    WHERE student_id = $student_id
+                      AND schedule_id = $schedule_id
+                      AND date_absent = '$selected_date'
+                    ORDER BY id DESC LIMIT 1
+                ");
+                $excuse = $excuse_q ? $excuse_q->fetch_assoc() : null;
+                $excuse_status   = $excuse ? $excuse['status'] : null;   // Pending / Approved / Rejected / null
+                $excuse_approved = ($excuse_status === 'Approved');
+
                 // Check existing record in attendance table
                 $att_q = $conn->query("SELECT * FROM attendance WHERE schedule_id = $schedule_id AND student_id = $student_id AND attendance_date = '$selected_date'");
                 $existing = $att_q->fetch_assoc();
 
                 if ($existing) {
-                    $status = $existing['status'];
                     $time_in = $existing['time_logged'];
+                    $status  = $existing['status'];
+
+                    if ($time_in) {
+                        // Student scanned — check cutoffs against present & absent thresholds
+                        $tap_ts = strtotime($time_in);
+                        if ($tap_ts <= $present_cutoff) {
+                            $correct_status = 'Present';
+                        } elseif ($tap_ts <= $absent_threshold) {
+                            $correct_status = 'Late';
+                        } else {
+                            $correct_status = $excuse_approved ? 'Excused' : 'Absent';
+                        }
+                        if ($status !== $correct_status) {
+                            $status = $correct_status;
+                            $conn->query("UPDATE attendance SET status='$status' WHERE schedule_id=$schedule_id AND student_id=$student_id AND attendance_date='$selected_date'");
+                        }
+                    } else {
+                        // No scan — apply excuse / absent logic
+                        if ($excuse_approved) {
+                            if ($status !== 'Excused') {
+                                $status = 'Excused';
+                                $conn->query("UPDATE attendance SET status='Excused' WHERE schedule_id=$schedule_id AND student_id=$student_id AND attendance_date='$selected_date'");
+                            }
+                        } elseif ($now > $absent_threshold) {
+                            if ($status !== 'Absent') {
+                                $status = 'Absent';
+                                $conn->query("UPDATE attendance SET status='Absent' WHERE schedule_id=$schedule_id AND student_id=$student_id AND attendance_date='$selected_date'");
+                            }
+                        }
+                    }
                 } else {
-                    // On-the-fly calculation if record doesn't exist
+                    // No existing record — compute on-the-fly
                     $log_q = $conn->query("SELECT time_in FROM logs WHERE rfid_uid='" . $conn->real_escape_string($rfid) . "' AND DATE(time_in)='$selected_date' AND time_in >= '" . date('Y-m-d H:i:s', $start_ts - 10800) . "' ORDER BY time_in ASC LIMIT 1");
                     $log = $log_q->fetch_assoc();
-                    
+
                     $time_in = $log ? $log['time_in'] : null;
                     if ($time_in) {
-                        $status = (strtotime($time_in) <= $present_cutoff) ? 'Present' : 'Late';
+                        // Card tap exists — evaluate present, late, and absent thresholds
+                        $tap_ts = strtotime($time_in);
+                        if ($tap_ts <= $present_cutoff) {
+                            $status = 'Present';
+                        } elseif ($tap_ts <= $absent_threshold) {
+                            $status = 'Late';
+                        } else {
+                            $status = $excuse_approved ? 'Excused' : 'Absent';
+                        }
                     } else {
-                        if ($now > $absent_threshold) {
+                        // No card tap — check excuse
+                        if ($excuse_approved) {
+                            $status = 'Excused';
+                        } elseif ($now > $absent_threshold) {
                             $status = 'Absent';
                         } else {
                             $status = 'Pending';
                         }
                     }
-                    
-                    // Persist if not pending
+
+                    // Persist if determined (not pending)
                     if ($status !== 'Pending') {
                         $conn->query("INSERT INTO attendance (schedule_id, student_id, name, attendance_date, status, time_logged) VALUES ($schedule_id, $student_id, '" . $conn->real_escape_string($name) . "', '$selected_date', '$status', " . ($time_in ? "'$time_in'" : "NULL") . ")");
                     }
                 }
 
                 $computed[] = [
-                    'student' => $st,
-                    'time_in' => $time_in,
-                    'status' => $status
+                    'student'        => $st,
+                    'time_in'        => $time_in,
+                    'status'         => $status,
+                    'excuse_status'  => $excuse_status,
+                    'excuse_reason'  => $excuse ? htmlspecialchars($excuse['reason']) : null,
+                    'excuse_id'      => $excuse ? (int)$excuse['id'] : null,
                 ];
             }
         }
@@ -149,6 +214,21 @@ if ($schedule_id !== false) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Excuse & Tap Status Styles */
+        .tap-yes { color: #065f46; font-weight: 600; font-size: 0.82rem; }
+        .tap-no  { color: #9ca3af; font-size: 0.82rem; }
+        .excuse-pill {
+            display: inline-block;
+            padding: 0.15rem 0.55rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .excuse-approved { background: #d1fae5; color: #065f46; }
+        .excuse-pending  { background: #fef3c7; color: #92400e; }
+        .excuse-rejected { background: #fee2e2; color: #7f1d1d; }
+        .excuse-none     { color: #cbd5e1; }
+        td.excused       { color: #0284c7; font-weight: 700; }
         /* Grace Period Controls */
         .grace-controls-bar {
             display: flex;
@@ -340,9 +420,23 @@ if ($schedule_id !== false) {
                         </div>
                     <?php elseif ($selected_date === date('Y-m-d')): ?>
                         <div class="grace-controls-bar">
+                        <?php if ($now_ts >= $start_ts): ?>
                             <button class="btn-grace btn-create-grace" onclick="openGraceModal(<?= $schedule_id ?>, '<?= htmlspecialchars(addslashes($sched['subject'])) ?>', 15, 60)">
                                 <i class="fa-solid fa-clock-rotate-left"></i> Create Late &amp; Absent Period
                             </button>
+                            <?php if (!empty($start_class_error)): ?>
+                                <span style="color:#b91c1c;font-size:0.84rem;font-weight:600;">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                    <?= htmlspecialchars($start_class_error) ?>
+                                </span>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <span style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:#f1f5f9;color:#64748b;border-radius:9px;font-size:0.84rem;font-weight:600;border:1.5px solid #e2e8f0;">
+                                <i class="fa-solid fa-clock"></i>
+                                Late &amp; Absent Period available at
+                                <strong><?= htmlspecialchars(date('h:i A', $start_ts)) ?></strong>
+                            </span>
+                        <?php endif; ?>
                         </div>
                     <?php endif; ?>
 					
@@ -352,23 +446,44 @@ if ($schedule_id !== false) {
 								<tr>
 									<th>#</th>
 									<th>Student Name</th>
-									<th>Time In</th>
-									<th>Status</th>
+									<th>Card Tap</th>
+									<th>Excuse</th>
+									<th>Final Status</th>
 								</tr>
 							</thead>
 							<tbody>
 								<?php if (empty($computed)): ?>
-									<tr><td colspan="4">No students found for this class.</td></tr>
-								<?php else: 
+									<tr><td colspan="5">No students found for this class.</td></tr>
+								<?php else:
 									$i = 1;
-									foreach ($computed as $row): 
+									foreach ($computed as $row):
 										$s = strtolower($row['status']);
-										$cls = ($s == 'present') ? 'present' : (($s == 'late') ? 'late' : (($s == 'absent') ? 'absent' : 'pending'));
+										$cls = match($s) {
+											'present' => 'present',
+											'late'    => 'late',
+											'absent'  => 'absent',
+											'excused' => 'excused',
+											default   => 'pending'
+										};
+										$ex = $row['excuse_status'];
+										$ex_cls = match(strtolower($ex ?? '')) {
+											'approved' => 'excuse-approved',
+											'rejected' => 'excuse-rejected',
+											'pending'  => 'excuse-pending',
+											default    => ''
+										};
 								?>
 									<tr>
 										<td><?= $i++ ?></td>
 										<td><?= htmlspecialchars($row['student']['name']) ?></td>
-										<td><?= $row['time_in'] ? date('h:i A', strtotime($row['time_in'])) : '-' ?></td>
+										<td><?= $row['time_in'] ? '<span class="tap-yes"><i class="fa-solid fa-id-card"></i> ' . date('h:i A', strtotime($row['time_in'])) . '</span>' : '<span class="tap-no"><i class="fa-solid fa-ban"></i> No Tap</span>' ?></td>
+										<td>
+											<?php if ($ex): ?>
+												<span class="excuse-pill <?= $ex_cls ?>" title="<?= $row['excuse_reason'] ?>"><?= htmlspecialchars($ex) ?></span>
+											<?php else: ?>
+												<span class="excuse-none">—</span>
+											<?php endif; ?>
+										</td>
 										<td class="<?= $cls ?>"><?= htmlspecialchars($row['status']) ?></td>
 									</tr>
 								<?php endforeach; endif; ?>

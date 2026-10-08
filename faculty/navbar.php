@@ -65,3 +65,7 @@ $menuItems = [
 <?php include(__DIR__ . '/../logout_modal.php'); ?>
 
 <script src="faculty_assets/faculty_sidebar.js"></script>
+<!-- Anime.js & Staggered Page Animations -->
+<script src="../assets/js/anime.min.js"></script>
+<script src="../assets/js/dashboard-animations.js" defer></script>
+

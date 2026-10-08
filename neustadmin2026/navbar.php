@@ -15,8 +15,8 @@ $menuItems = [
     ['file' => 'faculty.php', 'label' => 'Faculty', 'icon' => 'fa-solid fa-chalkboard-user'],
     ['file' => 'class_schedules.php', 'label' => 'Class Schedules', 'icon' => 'fa-solid fa-calendar-days'],
     ['file' => 'students.php', 'label' => 'Students', 'icon' => 'fa-solid fa-user-graduate'],
-    ['file' => 'logs.php', 'label' => 'Reports & Logs', 'icon' => 'fa-solid fa-clipboard-list'],
-    ['file' => 'ai_assistant.php', 'label' => 'AI Assistant', 'icon' => 'fa-solid fa-wand-magic-sparkles'],
+    ['file' => 'logs.php',         'label' => 'Student Attendance Logs', 'icon' => 'fa-solid fa-clipboard-list'],
+    ['file' => 'faculty_logs.php', 'label' => 'Faculty Attendance Logs', 'icon' => 'fa-solid fa-chalkboard-user'],
 ];
 
 if ($adminRole === 'super_admin') {
@@ -131,3 +131,8 @@ $menuItems[] = ['file' => 'settings.php', 'label' => 'Settings', 'icon' => 'fa-s
 <button id="backToTop" class="back-to-top" title="Back to Top">
     <i class="fa-solid fa-arrow-up"></i>
 </button>
+
+<!-- Anime.js & Staggered Page Animations -->
+<script src="../assets/js/anime.min.js"></script>
+<script src="../assets/js/dashboard-animations.js" defer></script>
+

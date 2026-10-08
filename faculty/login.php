@@ -1,45 +1,76 @@
 <?php
 include('../db.php');
+include('../auth_lockout.php');
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim($_POST['email'] ?? '');
+    $identifier = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    if ($email === '' || $password === '') {
-        $error = 'Please provide email and password.';
+    if ($identifier === '') {
+        $error = 'Please provide your email address or RFID UID.';
     } else {
-        $email_safe = $conn->real_escape_string($email);
-        $q = $conn->query("SELECT * FROM faculty WHERE email='$email_safe' LIMIT 1");
-        if ($q && $q->num_rows > 0) {
-            $f = $q->fetch_assoc();
-            if (empty($f['password_hash'])) {
-                $error = 'No password set for this account. Contact administrator.';
-            } else {
-                if (password_verify($password, $f['password_hash'])) {
+        $attempt_state = login_attempt_state('faculty', $identifier);
+        if ($attempt_state['blocked']) {
+            $error = login_attempt_message($attempt_state);
+        } else {
+            $id_safe = $conn->real_escape_string($identifier);
+            $q = $conn->query("SELECT * FROM faculty WHERE email='$id_safe' OR UPPER(rfid_uid)=UPPER('$id_safe') LIMIT 1");
+            if ($q && $q->num_rows > 0) {
+                $f = $q->fetch_assoc();
+                $has_password = !empty($f['password_hash']);
+                $is_first_login = !empty($f['is_first_login']);
+
+                if (!$has_password) {
+                    login_attempt_reset('faculty', $identifier);
                     $_SESSION['2fa_pending_faculty'] = true;
                     $_SESSION['2fa_faculty_id'] = $f['id'];
                     $_SESSION['2fa_faculty_name'] = $f['name'];
                     $_SESSION['2fa_faculty_email'] = $f['email'];
                     $_SESSION['2fa_faculty_dept'] = $f['department'];
-                    
+                    $_SESSION['2fa_faculty_is_first_login'] = true;
+
                     $otp = sprintf("%06d", mt_rand(1, 999999));
                     $_SESSION['faculty_2fa_code'] = $otp;
-                    
+
                     require_once '../mailer.php';
                     send_faculty_otp($f['email'], $otp);
-                    
+
                     header('Location: verify_otp.php');
                     exit;
                 } else {
-                    $error = 'Invalid email or password.';
+                    if ($password === '') {
+                        $error = 'Please provide your password.';
+                        login_attempt_failed('faculty', $identifier);
+                    } elseif (password_verify($password, $f['password_hash'])) {
+                        login_attempt_reset('faculty', $identifier);
+                        $_SESSION['2fa_pending_faculty'] = true;
+                        $_SESSION['2fa_faculty_id'] = $f['id'];
+                        $_SESSION['2fa_faculty_name'] = $f['name'];
+                        $_SESSION['2fa_faculty_email'] = $f['email'];
+                        $_SESSION['2fa_faculty_dept'] = $f['department'];
+                        $_SESSION['2fa_faculty_is_first_login'] = $is_first_login;
+
+                        $otp = sprintf("%06d", mt_rand(1, 999999));
+                        $_SESSION['faculty_2fa_code'] = $otp;
+
+                        require_once '../mailer.php';
+                        send_faculty_otp($f['email'], $otp);
+
+                        header('Location: verify_otp.php');
+                        exit;
+                    } else {
+                        $error = 'Invalid email or password.';
+                        login_attempt_failed('faculty', $identifier);
+                    }
                 }
+            } else {
+                $error = 'Invalid email or password.';
+                login_attempt_failed('faculty', $identifier);
             }
-        } else {
-            $error = 'Invalid email or password.';
         }
     }
 }
@@ -53,6 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Faculty Login – NEUST Gatepass</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     <style>
         :root {
             --bg1: #eef2ff;
@@ -177,6 +209,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin: 10px 0 6px
         }
 
+        .form input[type="text"],
         .form input[type="email"],
         .form input[type="password"] {
             width: 100%;
@@ -251,19 +284,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <p class="lead">Sign in to access your classes, attendance, and reports.</p>
             </div>
 
+            <?php if (!empty($_GET['expired'])): ?>
+                <div class="notice-expired" style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;padding:12px 14px;border-radius:10px;margin-bottom:16px;font-size:14px;display:flex;align-items:center;gap:10px;">
+                    <i class="fa-solid fa-clock-rotate-left" style="font-size:16px;color:#d97706;"></i>
+                    <span>Your session has expired due to inactivity. Please sign in again.</span>
+                </div>
+            <?php endif; ?>
+
             <?php if ($error): ?>
                 <div class="error"><?= htmlspecialchars($error) ?></div>
             <?php endif; ?>
 
+
             <form method="POST" action="login.php" novalidate>
                 <label for="email">Email</label>
-                <input id="email" name="email" type="email" autocomplete="username" required
+                <input id="email" name="email" type="text" autocomplete="username" required
+                    placeholder="Enter email"
                     value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" autofocus>
 
                 <label for="password">Password</label>
                 <div class="pw">
-                    <input id="password" name="password" type="password" autocomplete="current-password" required>
-                    <button type="button" class="toggle" aria-pressed="false" aria-label="Show password">Show</button>
+                    <input id="password" name="password" type="password" autocomplete="current-password">
+                    <button type="button" class="toggle" aria-pressed="false" aria-label="Show password"><i class="fa-solid fa-eye"></i></button>
                 </div>
 
                 <button type="submit" class="submit">Sign in</button>
@@ -275,11 +317,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             var pw = document.getElementById('password');
             var btn = document.querySelector('.toggle');
             if (!pw || !btn) return;
-            btn.addEventListener('click', function (e) {
-                var type = pw.getAttribute('type') === 'password' ? 'text' : 'password';
-                pw.setAttribute('type', type);
-                btn.textContent = type === 'password' ? 'Show' : 'Hide';
-                btn.setAttribute('aria-pressed', type !== 'password');
+            btn.addEventListener('click', function () {
+                var show = pw.getAttribute('type') === 'password';
+                pw.setAttribute('type', show ? 'text' : 'password');
+                btn.querySelector('i').className = show ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+                btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+                btn.setAttribute('aria-pressed', show);
             });
         })();
     </script>

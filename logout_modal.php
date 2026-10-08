@@ -216,3 +216,5 @@
     }
 })();
 </script>
+
+<?php include_once(__DIR__ . '/session_timeout_modal.php'); ?>

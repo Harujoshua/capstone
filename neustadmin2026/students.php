@@ -90,10 +90,6 @@ FROM students")->fetch_assoc();
 
 <div class="container">
     <div class="page-header">
-        <div class="header-content">
-            <h2>Student Management</h2>
-            <p class="page-subtitle">View and manage all registered students in the system.</p>
-        </div>
         <div class="stats-grid">
             <div class="stat-card">
                 <span class="stat-label">Total Students</span>

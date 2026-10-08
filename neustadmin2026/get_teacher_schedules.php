@@ -30,16 +30,20 @@ $stmt->bind_param('is', $id, $fname);
 $stmt->execute();
 $res = $stmt->get_result();
 
+echo '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;background:#f8fafc;padding:12px 16px;border-radius:12px;border:1px solid #e2e8f0;">';
+echo '  <div><strong style="color:#0f172a;font-size:15px;"><i class="fa-solid fa-chalkboard-user" style="color:#2563eb;margin-right:6px;"></i>' . htmlspecialchars($fname) . '</strong> <span style="color:#64748b;font-size:13px;margin-left:6px;">(' . ($res ? $res->num_rows : 0) . ' schedules assigned)</span></div>';
+echo '</div>';
+
 if(!$res || $res->num_rows === 0){
-  echo '<div style="padding:12px">No schedules found for ' . htmlspecialchars($fname) . '.</div>';
+  echo '<div style="padding:24px;text-align:center;color:#64748b;background:#fff;border-radius:10px;border:1px dashed #cbd5e1;"><i class="fa-solid fa-calendar-xmark" style="font-size:2rem;color:#cbd5e1;display:block;margin-bottom:10px;"></i>No schedules found for ' . htmlspecialchars($fname) . '.</div>';
   exit;
 }
 
-echo '<table style="width:100%;border-collapse:collapse"><thead><tr style="text-align:left"><th>Course</th><th>Year</th><th>Section</th><th>Subject</th><th>Day</th><th>Time</th><th>Room</th></tr></thead><tbody>';
+echo '<table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="text-align:left;background:#f1f5f9;color:#475569;"><th style="padding:8px 10px;border-radius:6px 0 0 6px;">Course</th><th style="padding:8px 10px;">Year</th><th style="padding:8px 10px;">Section</th><th style="padding:8px 10px;">Subject</th><th style="padding:8px 10px;">Day</th><th style="padding:8px 10px;">Time</th><th style="padding:8px 10px;border-radius:0 6px 6px 0;">Room</th></tr></thead><tbody>';
 while($r = $res->fetch_assoc()){
   $time = '-';
   if($r['start_time'] && $r['end_time']) $time = date('h:i A', strtotime($r['start_time'])) . ' - ' . date('h:i A', strtotime($r['end_time']));
-  echo '<tr style="border-top:1px solid #eee"><td>' . htmlspecialchars($r['course']) . '</td><td>' . htmlspecialchars($r['year_level'] ?? '-') . '</td><td>' . htmlspecialchars($r['section'] ?? '-') . '</td><td>' . htmlspecialchars($r['subject']) . '</td><td>' . htmlspecialchars($r['day'] ?? '-') . '</td><td>' . $time . '</td><td>' . htmlspecialchars($r['room'] ?? '-') . '</td></tr>';
+  echo '<tr style="border-bottom:1px solid #f1f5f9"><td style="padding:10px;font-weight:600;color:#1e293b;">' . htmlspecialchars($r['course']) . '</td><td style="padding:10px;color:#475569;">' . htmlspecialchars($r['year_level'] ?? '-') . '</td><td style="padding:10px;color:#475569;">' . htmlspecialchars($r['section'] ?? '-') . '</td><td style="padding:10px;color:#0f172a;font-weight:500;">' . htmlspecialchars($r['subject']) . '</td><td style="padding:10px;"><span style="background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:600;">' . htmlspecialchars($r['day'] ?? '-') . '</span></td><td style="padding:10px;color:#475569;">' . $time . '</td><td style="padding:10px;color:#475569;">' . htmlspecialchars($r['room'] ?? '-') . '</td></tr>';
 }
 echo '</tbody></table>';
 

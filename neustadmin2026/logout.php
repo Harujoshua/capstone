@@ -12,6 +12,7 @@ if (ini_get("session.use_cookies")) {
     );
 }
 session_destroy();
-header('Location: login.php');
+$redirect = !empty($_GET['expired']) ? 'login.php?expired=1' : 'login.php';
+header('Location: ' . $redirect);
 exit;
 ?>

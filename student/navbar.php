@@ -64,5 +64,9 @@ $menuItems = [
 </aside>
 
 <?php include(__DIR__ . '/../logout_modal.php'); ?>
+<?php include(__DIR__ . '/first_login_modal.php'); ?>
 
 <script src="../faculty/faculty_assets/faculty_sidebar.js"></script>
+<!-- Anime.js & Staggered Page Animations -->
+<script src="../assets/js/anime.min.js"></script>
+<script src="../assets/js/dashboard-animations.js" defer></script>

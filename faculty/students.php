@@ -14,11 +14,11 @@ if ($scheds_res) {
         $schedules[] = $r;
 }
 
-$schedule_id_raw = $_POST['schedule_id'] ?? 'all';
+$schedule_id_raw = $_REQUEST['schedule_id'] ?? 'all';
 $has_selected_schedule = ($schedule_id_raw !== 'all' && $schedule_id_raw !== '');
 $schedule_id = intval($schedule_id_raw);
 
-$q = trim($_POST['q'] ?? '');
+$q = trim($_REQUEST['q'] ?? '');
 $q_esc = $conn->real_escape_string($q);
 
 $students = [];
@@ -229,7 +229,7 @@ if ($has_selected_schedule) {
                 <div class="card">No students found. Select a class or try a search.</div>
             <?php else: ?>
                 <div class="table-responsive">
-                    <table>
+                    <table id="studentsTable">
                         <thead>
                             <tr>
                                 <th>#</th>
@@ -241,11 +241,11 @@ if ($has_selected_schedule) {
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="studentsTableBody">
                             <?php $i = 1;
                             foreach ($students as $st): ?>
-                                <tr>
-                                    <td><?= $i++ ?></td>
+                                <tr class="student-row" data-index="<?= $i ?>">
+                                    <td class="row-num"><?= $i++ ?></td>
                                     <td><?= htmlspecialchars($st['name'] ?? $st['full_name'] ?? '') ?></td>
                                     <td><?= htmlspecialchars($st['rfid_uid'] ?? '') ?></td>
                                     <td><?= htmlspecialchars($st['course'] ?? '') ?></td>
@@ -259,6 +259,26 @@ if ($has_selected_schedule) {
                         </tbody>
                     </table>
                 </div>
+
+                <!-- ================= PAGINATION SECTION ================= -->
+                <div class="pagination-section" id="studentsPagination">
+                    <div class="pagination-info">
+                        <span>Showing <strong id="pageStart">1</strong> &ndash; <strong id="pageEnd"><?= min(15, count($students)) ?></strong> of <strong id="pageTotal"><?= count($students) ?></strong> students</span>
+                        <div class="per-page-wrapper">
+                            <label for="perPageSelect">Show</label>
+                            <select id="perPageSelect" class="per-page-select">
+                                <option value="10">10</option>
+                                <option value="15" selected>15</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                                <option value="all">All</option>
+                            </select>
+                            <span>entries</span>
+                        </div>
+                    </div>
+                    <div class="pagination-controls" id="paginationControls"></div>
+                </div>
             <?php endif; ?>
 
         </main>
@@ -271,49 +291,215 @@ if ($has_selected_schedule) {
         </div>
     </div>
 
-
     <script>
         // Modal functionality
         var modal = document.getElementById('studentModal');
         var modalClose = document.getElementById('modalClose');
         var modalBody = document.getElementById('modalBody');
-        var viewBtns = document.querySelectorAll('.view-student-btn');
 
-        modalClose.addEventListener('click', function () {
-            modal.classList.remove('open');
-            modalBody.innerHTML = '';
-        });
-
-        modal.addEventListener('click', function (e) {
-            if (e.target === modal) {
+        if (modalClose) {
+            modalClose.addEventListener('click', function () {
                 modal.classList.remove('open');
                 modalBody.innerHTML = '';
-            }
-        });
+            });
+        }
 
-        viewBtns.forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                var studentId = this.getAttribute('data-student-id');
-                modalBody.innerHTML = '<div class="loading"><p>Loading...</p></div>';
-                modal.classList.add('open');
+        if (modal) {
+            modal.addEventListener('click', function (e) {
+                if (e.target === modal) {
+                    modal.classList.remove('open');
+                    modalBody.innerHTML = '';
+                }
+            });
+        }
 
-                var formData = new FormData();
-                formData.append('id', studentId);
+        // Event delegation for opening student attendance modal
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest('.view-student-btn');
+            if (!btn) return;
+            var studentId = btn.getAttribute('data-student-id');
+            if (!studentId) return;
 
-                fetch('student.php', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(function (response) { return response.text(); })
-                .then(function (html) {
-                    modalBody.innerHTML = html;
-                })
-                .catch(function (error) {
-                    modalBody.innerHTML = '<div class="error-message">Error loading student data</div>';
-                    console.error('Error:', error);
-                });
+            modalBody.innerHTML = '<div class="loading"><p>Loading...</p></div>';
+            modal.classList.add('open');
+
+            var formData = new FormData();
+            formData.append('id', studentId);
+
+            fetch('student.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(function (response) { return response.text(); })
+            .then(function (html) {
+                modalBody.innerHTML = html;
+            })
+            .catch(function (error) {
+                modalBody.innerHTML = '<div class="error-message">Error loading student data</div>';
+                console.error('Error:', error);
             });
         });
+
+        // ================= Pagination Implementation =================
+        (function() {
+            var tableBody = document.getElementById('studentsTableBody');
+            var paginationSection = document.getElementById('studentsPagination');
+            if (!tableBody || !paginationSection) return;
+
+            var rows = Array.from(tableBody.querySelectorAll('tr.student-row'));
+            var totalRows = rows.length;
+            if (totalRows === 0) return;
+
+            var pageStartEl = document.getElementById('pageStart');
+            var pageEndEl = document.getElementById('pageEnd');
+            var pageTotalEl = document.getElementById('pageTotal');
+            var perPageSelect = document.getElementById('perPageSelect');
+            var paginationControls = document.getElementById('paginationControls');
+
+            // Retrieve saved or URL preference
+            var savedPerPage = localStorage.getItem('faculty_students_per_page');
+            var urlParams = new URLSearchParams(window.location.search);
+            var initialPerPage = urlParams.get('per_page') || savedPerPage || '15';
+
+            if (perPageSelect) {
+                var found = Array.from(perPageSelect.options).some(function(opt) {
+                    return opt.value === initialPerPage;
+                });
+                if (found) {
+                    perPageSelect.value = initialPerPage;
+                }
+            }
+
+            var currentPage = parseInt(urlParams.get('page'), 10) || 1;
+
+            function getPerPage() {
+                var val = perPageSelect ? perPageSelect.value : '15';
+                return val === 'all' ? totalRows : parseInt(val, 10);
+            }
+
+            function getTotalPages() {
+                var pp = getPerPage();
+                return pp >= totalRows ? 1 : Math.max(1, Math.ceil(totalRows / pp));
+            }
+
+            function renderControls(totalPages, curr) {
+                var html = '';
+                var isFirstDisabled = curr <= 1;
+                var isLastDisabled = curr >= totalPages;
+
+                // First Button
+                html += '<button type="button" class="pagination-btn ' + (isFirstDisabled ? 'disabled' : '') + '" data-page="1" ' + (isFirstDisabled ? 'disabled' : '') + ' title="First Page"><i class="fa-solid fa-angles-left"></i></button>';
+
+                // Previous Button
+                html += '<button type="button" class="pagination-btn ' + (isFirstDisabled ? 'disabled' : '') + '" data-page="' + (curr - 1) + '" ' + (isFirstDisabled ? 'disabled' : '') + ' title="Previous Page"><i class="fa-solid fa-angle-left"></i></button>';
+
+                // Numbers with smart ellipsis
+                var startP = Math.max(1, curr - 2);
+                var endP = Math.min(totalPages, curr + 2);
+
+                if (startP > 1) {
+                    html += '<button type="button" class="pagination-btn" data-page="1">1</button>';
+                    if (startP > 2) {
+                        html += '<span class="pagination-ellipsis">&hellip;</span>';
+                    }
+                }
+
+                for (var p = startP; p <= endP; p++) {
+                    if (p === curr) {
+                        html += '<button type="button" class="pagination-btn active" data-page="' + p + '">' + p + '</button>';
+                    } else {
+                        html += '<button type="button" class="pagination-btn" data-page="' + p + '">' + p + '</button>';
+                    }
+                }
+
+                if (endP < totalPages) {
+                    if (endP < totalPages - 1) {
+                        html += '<span class="pagination-ellipsis">&hellip;</span>';
+                    }
+                    html += '<button type="button" class="pagination-btn" data-page="' + totalPages + '">' + totalPages + '</button>';
+                }
+
+                // Next Button
+                html += '<button type="button" class="pagination-btn ' + (isLastDisabled ? 'disabled' : '') + '" data-page="' + (curr + 1) + '" ' + (isLastDisabled ? 'disabled' : '') + ' title="Next Page"><i class="fa-solid fa-angle-right"></i></button>';
+
+                // Last Button
+                html += '<button type="button" class="pagination-btn ' + (isLastDisabled ? 'disabled' : '') + '" data-page="' + totalPages + '" ' + (isLastDisabled ? 'disabled' : '') + ' title="Last Page"><i class="fa-solid fa-angles-right"></i></button>';
+
+                return html;
+            }
+
+            function updateView(shouldScroll) {
+                var totalPages = getTotalPages();
+                if (currentPage > totalPages) currentPage = totalPages;
+                if (currentPage < 1) currentPage = 1;
+
+                var perPage = getPerPage();
+                var startIndex = (currentPage - 1) * perPage;
+                var endIndex = Math.min(startIndex + perPage, totalRows);
+
+                // Show/hide rows
+                rows.forEach(function(row, idx) {
+                    if (idx >= startIndex && idx < endIndex) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                // Update text indicators
+                if (pageStartEl) pageStartEl.textContent = totalRows > 0 ? (startIndex + 1) : 0;
+                if (pageEndEl) pageEndEl.textContent = endIndex;
+                if (pageTotalEl) pageTotalEl.textContent = totalRows;
+
+                // Update pagination buttons
+                if (paginationControls) {
+                    paginationControls.innerHTML = renderControls(totalPages, currentPage);
+                }
+
+                if (shouldScroll) {
+                    var container = document.querySelector('.table-responsive');
+                    if (container && container.getBoundingClientRect().top < 50) {
+                        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
+            }
+
+            // Click listener for pagination buttons
+            if (paginationControls) {
+                paginationControls.addEventListener('click', function(e) {
+                    var btn = e.target.closest('.pagination-btn');
+                    if (!btn || btn.classList.contains('disabled') || btn.classList.contains('active')) return;
+                    var targetPage = parseInt(btn.getAttribute('data-page'), 10);
+                    if (!isNaN(targetPage) && targetPage !== currentPage) {
+                        currentPage = targetPage;
+                        updateView(true);
+                    }
+                });
+            }
+
+            // Per page dropdown change listener
+            if (perPageSelect) {
+                perPageSelect.addEventListener('change', function() {
+                    localStorage.setItem('faculty_students_per_page', perPageSelect.value);
+                    currentPage = 1;
+                    updateView(true);
+                });
+            }
+
+            // Print handling: display all rows for printing
+            window.addEventListener('beforeprint', function() {
+                rows.forEach(function(row) {
+                    row.style.display = '';
+                });
+            });
+
+            window.addEventListener('afterprint', function() {
+                updateView(false);
+            });
+
+            // Initial view update
+            updateView(false);
+        })();
     </script>
 </body>
 

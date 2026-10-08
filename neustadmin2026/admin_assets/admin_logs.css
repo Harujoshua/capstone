@@ -1,38 +1,103 @@
 /* Container */
 .container {
-    max-width: 1200px;
-    width: calc(100% - 40px);
-    margin: 20px auto;
-    padding: 20px;
+    max-width: none;
+    width: calc(100vw - var(--admin-sidebar-width) - 76px);
+    margin: 0 auto;
+    padding: 16px 20px 20px;
+    height: calc(100vh - 110px);
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
 }
 
 h2 {
     margin-top: 0;
 }
 
-/* Controls */
 .controls {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    flex-wrap: wrap;
     margin-bottom: 20px;
+    flex-shrink: 0;
 }
 
-.controls form {
+.log-filter-form {
     display: flex;
+    flex-direction: column;
     gap: 12px;
-    align-items: center;
+    width: 100%;
+}
+
+.filter-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
     flex-wrap: wrap;
+}
+
+.primary-row {
+    padding: 10px 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+}
+
+.advanced-filters {
+    display: none;
+    padding: 10px 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+}
+
+.advanced-filters.open {
+    display: block;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 120px;
+    flex: 1 1 120px;
+}
+
+.search-field {
+    flex: 1.6 1 230px;
+}
+
+.compact-field {
+    min-width: 130px;
+}
+
+.date-field,
+.time-field {
+    min-width: 150px;
+}
+
+.field label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    font-weight: 700;
 }
 
 .controls select,
 .controls button,
-.controls input[type="date"] {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
+.controls input[type="date"],
+.controls input[type="time"],
+.controls input[type="text"] {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
     font-size: 14px;
+    background: #fff;
+    color: #0f172a;
+    box-sizing: border-box;
+}
+
+.controls input[type="text"] {
+    min-width: 180px;
 }
 
 .controls select {
@@ -40,50 +105,47 @@ h2 {
 }
 
 .controls button {
-    background: #dc2626;
-    color: #fff;
     border: none;
     cursor: pointer;
     font-weight: 600;
+    transition: all 0.2s ease;
 }
 
 .controls button:hover {
+    filter: brightness(0.98);
+}
+
+.btn-clear,
+.btn-export-options {
+    white-space: nowrap;
+}
+
+.btn-clear {
+    background: #dc2626;
+    color: #fff;
+    min-height: 38px;
+}
+
+.btn-clear:hover {
     background: #b91c1c;
 }
 
-/* Date range controls */
-.date-range-wrap {
-    display: flex;
+.filter-toggle {
+    background: #e2e8f0;
+    color: #334155;
+    min-height: 38px;
+    width: 38px;
+    min-width: 38px;
+    align-self: stretch;
+    white-space: nowrap;
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0;
 }
 
-.date-input-box {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: #f8fafc;
-    padding: 2px 8px;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    font-size: 13px;
-    color: #475569;
-}
-
-.date-input-box label {
-    font-weight: 600;
-    font-size: 12px;
-    color: #64748b;
-}
-
-.date-input-box input[type="date"] {
-    border: none;
-    background: transparent;
-    padding: 6px 4px;
-    outline: none;
-    font-size: 13px;
-    color: #1e293b;
+.filter-toggle:hover {
+    background: #cbd5e1;
 }
 
 .preset-select {
@@ -287,9 +349,18 @@ h2 {
 }
 
 /* Table */
+#logsContainer {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
 .table-wrap {
     width: 100%;
-    overflow-x: auto;
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
     -webkit-overflow-scrolling: touch;
@@ -339,10 +410,47 @@ tr.date-header td {
     font-weight: 600;
 }
 
+/* User Avatar & Name in Table Rows */
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-avatar-img {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1.5px solid #cbd5e1;
+    background: #f1f5f9;
+}
+
+.user-avatar-placeholder {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #475569;
+    font-size: 0.82rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 1.5px solid #cbd5e1;
+}
+
+.user-name-text {
+    font-weight: 500;
+    color: #0f172a;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .container {
-        width: calc(100% - 12px);
+        width: calc(100vw - 28px);
         margin: 10px auto 16px;
         padding: 12px;
     }
@@ -385,6 +493,106 @@ tr.date-header td {
     }
 }
 
+/* ================= PAGINATION STYLES ================= */
+.pagination-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 18px;
+    padding: 10px 4px;
+    font-size: 0.9rem;
+    color: #475569;
+}
+
+.pagination-info {
+    font-weight: 500;
+    color: #64748b;
+}
+
+.pagination-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s ease-in-out;
+    user-select: none;
+}
+
+.pagination-btn:hover:not(:disabled):not(.active) {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    color: #0f172a;
+}
+
+.pagination-btn.active {
+    background: #0284c7;
+    border-color: #0284c7;
+    color: #ffffff;
+    cursor: default;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.pagination-btn:disabled,
+.pagination-btn.disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #94a3b8;
+}
+
+.pagination-ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 36px;
+    color: #94a3b8;
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.per-page-select {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.875rem;
+    color: #334155;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .pagination-section {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 14px;
+    }
+    .pagination-controls {
+        justify-content: center;
+    }
+}
+
 /* ================= PRINT STYLES ================= */
 @media print {
     :root {
@@ -408,7 +616,8 @@ tr.date-header td {
     .admin-sidebar-toggle, 
     .admin-sidebar-overlay,
     #backToTop,
-    .controls {
+    .controls,
+    .pagination-section {
         display: none !important;
     }
 

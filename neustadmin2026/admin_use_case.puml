@@ -1,0 +1,39 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor "Super Admin" as SuperAdmin
+
+rectangle "NEUST Gatepass Admin Module" {
+    usecase "Logout" as UC01
+    usecase "Manage Admin Accounts" as UC02
+    usecase "Change Password / Email" as UC03
+    usecase "Update Settings" as UC04
+    usecase "Configure Academic Settings" as UC05
+    usecase "View Audit Logs" as UC06
+    usecase "Attendance Logs" as UC07
+    usecase "Manage Class Schedules" as UC08
+    usecase "Manage Faculty" as UC09
+    usecase "Register Students" as UC10
+    usecase "View Dashboard" as UC11
+    usecase "Verify OTP" as UC12
+    usecase "Login to Admin Portal" as UC13
+}
+
+SuperAdmin --> UC01
+SuperAdmin --> UC02
+SuperAdmin --> UC03
+SuperAdmin --> UC04
+SuperAdmin --> UC05
+SuperAdmin --> UC06
+SuperAdmin --> UC07
+SuperAdmin --> UC08
+SuperAdmin --> UC09
+SuperAdmin --> UC10
+SuperAdmin --> UC11
+SuperAdmin --> UC12
+SuperAdmin --> UC13
+
+@enduml

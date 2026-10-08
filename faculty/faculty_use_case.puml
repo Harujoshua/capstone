@@ -1,0 +1,43 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor "Faculty Member" as Faculty
+
+rectangle "NEUST Gatepass Faculty Module" {
+usecase "Logout" as UC12
+usecase "Generate Reports" as UC11
+usecase "Review Excuse Requests" as UC10
+usecase "Submit Excuse Letter" as UC09
+usecase "View Class Details" as UC08
+usecase "Manage Classes" as UC07
+usecase "View Student List" as UC06
+usecase "Mark / Verify Attendance" as UC05
+usecase "View Attendance Records" as UC04
+usecase "View Daily Schedule" as UC03
+usecase "View Dashboard" as UC02
+usecase "Login to Faculty Portal" as UC01
+}
+
+Faculty --> UC01
+Faculty --> UC02
+Faculty --> UC03
+Faculty --> UC04
+Faculty --> UC05
+Faculty --> UC06
+Faculty --> UC07
+Faculty --> UC08
+Faculty --> UC09
+Faculty --> UC10
+Faculty --> UC11
+Faculty --> UC12
+
+note right of Faculty
+  Faculty access is scoped to the teacher's
+  assigned classes, attendance, excuse letters,
+  and reports only.
+end note
+
+@enduml

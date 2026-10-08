@@ -44,6 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['faculty_name'] = $_SESSION['2fa_faculty_name'];
                 $_SESSION['faculty_email'] = $_SESSION['2fa_faculty_email'];
                 $_SESSION['faculty_dept'] = $_SESSION['2fa_faculty_dept'];
+                $_SESSION['faculty_is_first_login'] = $_SESSION['2fa_faculty_is_first_login'] ?? false;
                 
                 // Cleanup 2FA session variables
                 unset($_SESSION['2fa_pending_faculty']);
@@ -51,6 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 unset($_SESSION['2fa_faculty_name']);
                 unset($_SESSION['2fa_faculty_email']);
                 unset($_SESSION['2fa_faculty_dept']);
+                unset($_SESSION['2fa_faculty_is_first_login']);
                 unset($_SESSION['faculty_2fa_code']);
                 
                 header('Location: dashboard.php');

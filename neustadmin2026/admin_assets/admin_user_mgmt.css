@@ -1,0 +1,349 @@
+/* ===================================================
+   Admin User Management – Responsive Styles
+   =================================================== */
+
+/* ── Page Header ──────────────────────────────────── */
+.um-page-header {
+    margin-bottom: 28px;
+}
+
+.um-page-header h2 {
+    margin: 0 0 5px;
+    font-size: 1.65rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+
+.um-page-header .subtitle {
+    color: #64748b;
+    font-size: 0.92rem;
+    font-weight: 500;
+}
+
+/* ── Two-Column Grid ──────────────────────────────── */
+.um-grid {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+/* ── Card ─────────────────────────────────────────── */
+.um-card {
+    background: #ffffff;
+    border: 1px solid #e8ecf2;
+    border-radius: 18px;
+    padding: 28px 26px 24px;
+    box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+}
+
+.um-card-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 22px;
+}
+
+.um-card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.um-card-icon.icon-violet {
+    background: #ede9fe;
+    color: #7c3aed;
+}
+
+.um-card-icon.icon-teal {
+    background: #ccfbf1;
+    color: #0d9488;
+}
+
+.um-card-header-text h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.um-card-header-text p {
+    margin: 3px 0 0;
+    font-size: 0.82rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+/* ── Form Fields ──────────────────────────────────── */
+.um-field {
+    margin-bottom: 16px;
+}
+
+.um-field:last-of-type {
+    margin-bottom: 0;
+}
+
+.um-field label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 7px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.um-field input[type="text"],
+.um-field input[type="email"],
+.um-field input[type="password"],
+.um-field select {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 0.92rem;
+    font-family: inherit;
+    background: #fff;
+    color: #1e293b;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    box-sizing: border-box;
+}
+
+.um-field input:focus,
+.um-field select:focus {
+    border-color: #14b8a6;
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.12);
+}
+
+.um-field select {
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 8L1 3h10z' fill='%2394a3b8'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+}
+
+/* ── Submit Button ────────────────────────────────── */
+.um-btn-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px 22px;
+    margin-top: 20px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    font-family: inherit;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(99, 102, 241, 0.28);
+    transition: all 0.2s ease;
+}
+
+.um-btn-submit:hover {
+    box-shadow: 0 4px 18px rgba(99, 102, 241, 0.38);
+    transform: translateY(-1px);
+}
+
+/* ── Table ────────────────────────────────────────── */
+.um-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 12px;
+    border: 1px solid #e8ecf2;
+}
+
+.um-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    min-width: 420px;
+}
+
+.um-table th {
+    background: #f8fafc;
+    padding: 13px 16px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.72rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid #e8ecf2;
+    white-space: nowrap;
+}
+
+.um-table td {
+    padding: 13px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    color: #1e293b;
+}
+
+.um-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.um-table tbody tr {
+    transition: background 0.15s ease;
+}
+
+.um-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+/* ── Role Badge ───────────────────────────────────── */
+.um-role-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.um-role-badge.role-super {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.um-role-badge.role-sub {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+/* ── Delete Action ────────────────────────────────── */
+.um-btn-delete {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #dc2626;
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 8px;
+    transition: background 0.15s ease, color 0.15s ease;
+    white-space: nowrap;
+}
+
+.um-btn-delete:hover {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.um-you-tag {
+    color: #94a3b8;
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+/* ── Alert Messages ───────────────────────────────── */
+.um-alert {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 18px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    animation: umAlertIn 0.35s ease forwards;
+}
+
+@keyframes umAlertIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.um-alert.success {
+    background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+}
+
+.um-alert.error {
+    background: linear-gradient(135deg, #fef2f2, #fee2e2);
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+
+/* ── Responsive: Medium ≤ 1024px ─────────────────── */
+@media (max-width: 1024px) {
+    .um-grid {
+        grid-template-columns: 320px 1fr;
+        gap: 20px;
+    }
+}
+
+/* ── Responsive: Tablet ≤ 860px ──────────────────── */
+@media (max-width: 860px) {
+    .um-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .um-card {
+        padding: 22px 20px 20px;
+    }
+}
+
+/* ── Responsive: Mobile ≤ 480px ──────────────────── */
+@media (max-width: 480px) {
+    .um-page-header h2 {
+        font-size: 1.35rem;
+    }
+
+    .um-card {
+        padding: 18px 16px 16px;
+        border-radius: 14px;
+    }
+
+    .um-card-icon {
+        width: 38px;
+        height: 38px;
+        font-size: 0.95rem;
+    }
+
+    .um-card-header-text h3 {
+        font-size: 0.95rem;
+    }
+
+    .um-table th,
+    .um-table td {
+        padding: 11px 12px;
+        font-size: 0.84rem;
+    }
+}
+
+/* ── Responsive: Very Small ≤ 360px ──────────────── */
+@media (max-width: 360px) {
+    .um-card {
+        padding: 14px 13px 13px;
+    }
+
+    .um-field input[type="text"],
+    .um-field input[type="email"],
+    .um-field input[type="password"],
+    .um-field select {
+        font-size: 0.88rem;
+        padding: 10px 12px;
+    }
+}

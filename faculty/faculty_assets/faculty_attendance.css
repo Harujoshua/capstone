@@ -68,6 +68,11 @@ th {
   color: #7f1d1d;
 }
 
+.excused {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
 .pending {
   background: #eef2ff;
   color: #3730a3;

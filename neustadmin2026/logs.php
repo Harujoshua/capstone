@@ -2,12 +2,12 @@
 include('auth.php');
 $conn = new mysqli("localhost", "root", "", "neust_gatepass_v3");
 
-// ================= CLEAR ALL LOGS =================
+// ================= CLEAR STUDENT LOGS =================
 if (isset($_POST['clear_all'])) {
     if (($_SESSION['admin_role'] ?? 'sub_admin') === 'super_admin') {
-        $conn->query("TRUNCATE TABLE logs");
+        $conn->query("DELETE FROM logs WHERE student_id IS NOT NULL");
         include_once('logger.php');
-        log_audit('DELETE', 'Logs', 'All Logs', 'All attendance logs cleared/truncated.');
+        log_audit('DELETE', 'Logs', 'Student Logs', 'All student attendance logs cleared.');
     }
     header("Location: logs.php");
     exit;
@@ -18,6 +18,9 @@ $filter = $_REQUEST['filter'] ?? '';
 $selected_date = $_REQUEST['log_date'] ?? '';
 $start_date = $_REQUEST['start_date'] ?? '';
 $end_date = $_REQUEST['end_date'] ?? '';
+$search_term = trim($_REQUEST['search'] ?? '');
+$time_from = $_REQUEST['time_from'] ?? '';
+$time_to = $_REQUEST['time_to'] ?? '';
 
 // If single log_date is set without start_date/end_date, populate them
 if (!empty($selected_date) && empty($start_date) && empty($end_date)) {
@@ -25,24 +28,38 @@ if (!empty($selected_date) && empty($start_date) && empty($end_date)) {
     $end_date = $selected_date;
 }
 
-$sql = "SELECT logs.*, students.course AS course, students.year_level AS year_level, students.section AS section \n";
-$sql .= "FROM logs LEFT JOIN students ON logs.rfid_uid = students.rfid_uid WHERE 1=1";
+$where = " WHERE logs.student_id IS NOT NULL";
 
 if (!empty($filter) && ($filter == "IN" || $filter == "OUT")) {
-    $sql .= " AND logs.status='$filter'";
+    $where .= " AND logs.status='$filter'";
+}
+
+if (!empty($search_term)) {
+    $safe_search = $conn->real_escape_string($search_term);
+    $where .= " AND (logs.name LIKE '%$safe_search%' OR logs.rfid_uid LIKE '%$safe_search%' OR students.course LIKE '%$safe_search%' OR students.year_level LIKE '%$safe_search%' OR students.section LIKE '%$safe_search%')";
 }
 
 // Date filter
 if (!empty($start_date) && !empty($end_date)) {
     $safe_start = $conn->real_escape_string($start_date);
     $safe_end = $conn->real_escape_string($end_date);
-    $sql .= " AND DATE(COALESCE(time_in, time_out)) BETWEEN '$safe_start' AND '$safe_end'";
+    $where .= " AND DATE(COALESCE(time_in, time_out)) BETWEEN '$safe_start' AND '$safe_end'";
 } elseif (!empty($start_date)) {
     $safe_start = $conn->real_escape_string($start_date);
-    $sql .= " AND DATE(COALESCE(time_in, time_out)) >= '$safe_start'";
+    $where .= " AND DATE(COALESCE(time_in, time_out)) >= '$safe_start'";
 } elseif (!empty($end_date)) {
     $safe_end = $conn->real_escape_string($end_date);
-    $sql .= " AND DATE(COALESCE(time_in, time_out)) <= '$safe_end'";
+    $where .= " AND DATE(COALESCE(time_in, time_out)) <= '$safe_end'";
+}
+
+if (!empty($time_from)) {
+    $safe_time_from = $conn->real_escape_string($time_from);
+    $where .= " AND TIME(COALESCE(time_in, time_out)) >= '$safe_time_from'";
+}
+
+if (!empty($time_to)) {
+    $safe_time_to = $conn->real_escape_string($time_to);
+    $where .= " AND TIME(COALESCE(time_in, time_out)) <= '$safe_time_to'";
 }
 
 // Course / Year / Section filters
@@ -52,21 +69,20 @@ $section = trim($_REQUEST['section'] ?? '');
 
 if ($course !== '') {
     $safe = $conn->real_escape_string($course);
-    $sql .= " AND students.course = '$safe'";
+    $where .= " AND students.course = '$safe'";
 }
 
 if ($year_level !== '') {
     $safe = $conn->real_escape_string($year_level);
-    $sql .= " AND students.year_level = '$safe'";
+    $where .= " AND students.year_level = '$safe'";
 }
 
 if ($section !== '') {
     $safe = $conn->real_escape_string($section);
-    $sql .= " AND students.section = '$safe'";
+    $where .= " AND students.section = '$safe'";
 }
 
-$sql .= " ORDER BY COALESCE(time_in, time_out) DESC, id DESC";
-$result = $conn->query($sql);
+$base_select = "SELECT logs.*, students.course AS course, students.year_level AS year_level, students.section AS section, students.photo AS photo FROM logs LEFT JOIN students ON logs.rfid_uid = students.rfid_uid" . $where;
 
 // ================= EXPORT CSV =================
 if (isset($_REQUEST['export_csv'])) {
@@ -81,12 +97,15 @@ if (isset($_REQUEST['export_csv'])) {
         $date_suffix = date('Y-m-d_H-i-s');
     }
 
+    $export_sql = $base_select . " ORDER BY COALESCE(time_in, time_out) DESC, logs.id DESC";
+    $result = $conn->query($export_sql);
+
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="attendance_logs_' . $date_suffix . '.csv"');
     $output = fopen('php://output', 'w');
     
     // Output column headings
-    fputcsv($output, ['Name', 'RFID UID', 'Course', 'Year', 'Section', 'Status', 'Time IN', 'Time OUT', 'Date']);
+    fputcsv($output, ['Name', 'RFID UID', 'Course', 'Year', 'Section', 'Status', 'First IN', 'Last OUT', 'Date']);
     
     while ($row = $result->fetch_assoc()) {
         $row_date = '';
@@ -114,6 +133,31 @@ if (isset($_REQUEST['export_csv'])) {
     fclose($output);
     exit;
 }
+
+// ================= PAGINATION LOGIC =================
+$count_sql = "SELECT COUNT(*) AS total FROM logs LEFT JOIN students ON logs.rfid_uid = students.rfid_uid" . $where;
+$count_res = $conn->query($count_sql);
+$total_rows = ($count_res && $count_res->num_rows) ? (int)$count_res->fetch_assoc()['total'] : 0;
+
+$per_page = intval($_REQUEST['per_page'] ?? 25);
+if (!in_array($per_page, [10, 25, 50, 100], true)) {
+    $per_page = 25;
+}
+
+$total_pages = max(1, (int)ceil($total_rows / $per_page));
+$page = max(1, min($total_pages, intval($_REQUEST['page'] ?? 1)));
+$offset = ($page - 1) * $per_page;
+
+$from_entry = ($total_rows > 0) ? ($offset + 1) : 0;
+$to_entry = min($offset + $per_page, $total_rows);
+
+$print_all = !empty($_REQUEST['print_all']);
+if ($print_all) {
+    $sql = $base_select . " ORDER BY COALESCE(time_in, time_out) DESC, logs.id DESC";
+} else {
+    $sql = $base_select . " ORDER BY COALESCE(time_in, time_out) DESC, logs.id DESC LIMIT $offset, $per_page";
+}
+$result = $conn->query($sql);
 ?>
 <?php include('navbar.php'); ?>
 <link rel="stylesheet" href="admin_assets/admin_logs.css">
@@ -125,7 +169,7 @@ if (isset($_REQUEST['export_csv'])) {
             <img src="admin_assets/neust_logo.png" alt="NEUST Logo" class="print-logo">
             <div class="print-header-text">
                 <h2>NUEVA ECIJA UNIVERSITY OF SCIENCE AND TECHNOLOGY</h2>
-                <h3>ATTENDANCE LOGS REPORT</h3>
+                <h3>STUDENT ATTENDANCE LOGS REPORT</h3>
                 <p class="print-filter-info">
                     <strong>Date Range:</strong> 
                     <?php 
@@ -151,65 +195,101 @@ if (isset($_REQUEST['export_csv'])) {
 
     <!-- ================= CONTROLS ================= -->
     <div class="controls">
-        <form id="filterForm" method="POST">
-
-            <select name="filter" title="Status Filter">
-                <option value="">ALL STATUS</option>
-                <option value="IN" <?= $filter == "IN" ? "selected" : "" ?>>IN</option>
-                <option value="OUT" <?= $filter == "OUT" ? "selected" : "" ?>>OUT</option>
-            </select>
-
-            <select name="course" title="Course Filter">
-                <option value="">All courses</option>
-                <option value="BSIT" <?= (isset($course) && $course === 'BSIT') ? "selected" : "" ?>>BSIT</option>
-                <option value="BEED" <?= (isset($course) && $course === 'BEED') ? "selected" : "" ?>>BEED</option>
-                <option value="BSBA" <?= (isset($course) && $course === 'BSBA') ? "selected" : "" ?>>BSBA</option>
-            </select>
-
-            <select name="year_level" title="Year Level Filter">
-                <option value="">All years</option>
-                <option value="1st Year" <?= (isset($year_level) && $year_level === '1st Year') ? "selected" : "" ?>>1st Year</option>
-                <option value="2nd Year" <?= (isset($year_level) && $year_level === '2nd Year') ? "selected" : "" ?>>2nd Year</option>
-                <option value="3rd Year" <?= (isset($year_level) && $year_level === '3rd Year') ? "selected" : "" ?>>3rd Year</option>
-                <option value="4th Year" <?= (isset($year_level) && $year_level === '4th Year') ? "selected" : "" ?>>4th Year</option>
-            </select>
-
-            <select name="section" title="Section Filter">
-                <option value="">All sections</option>
-                <option value="A" <?= (isset($section) && $section === 'A') ? "selected" : "" ?>>A</option>
-                <option value="B" <?= (isset($section) && $section === 'B') ? "selected" : "" ?>>B</option>
-            </select>
-
-            <!-- Date Range Controls -->
-            <div class="date-range-wrap">
-                <div class="date-input-box">
-                    <label>From:</label>
-                    <input type="date" name="start_date" id="start_date" value="<?= htmlspecialchars($start_date) ?>" title="Start Date">
+        <form id="filterForm" method="POST" class="log-filter-form">
+            <div class="filter-row primary-row">
+                <div class="field search-field">
+                    <label for="search_input">Search</label>
+                    <input id="search_input" type="text" name="search" value="<?= htmlspecialchars($search_term) ?>" placeholder="Search name or RFID" title="Search by student name or RFID UID">
                 </div>
-                <div class="date-input-box">
-                    <label>To:</label>
-                    <input type="date" name="end_date" id="end_date" value="<?= htmlspecialchars($end_date) ?>" title="End Date">
+
+                <div class="field compact-field">
+                    <label>Status</label>
+                    <select name="filter" title="Status Filter">
+                        <option value="">ALL STATUS</option>
+                        <option value="IN" <?= $filter == "IN" ? "selected" : "" ?>>IN</option>
+                        <option value="OUT" <?= $filter == "OUT" ? "selected" : "" ?>>OUT</option>
+                    </select>
+                </div>
+
+                <div class="field compact-field">
+                    <label>Course</label>
+                    <select name="course" title="Course Filter">
+                        <option value="">All courses</option>
+                        <option value="BSIT" <?= (isset($course) && $course === 'BSIT') ? "selected" : "" ?>>BSIT</option>
+                        <option value="BEED" <?= (isset($course) && $course === 'BEED') ? "selected" : "" ?>>BEED</option>
+                        <option value="BSBA" <?= (isset($course) && $course === 'BSBA') ? "selected" : "" ?>>BSBA</option>
+                    </select>
+                </div>
+
+                <div class="field compact-field">
+                    <label>Year</label>
+                    <select name="year_level" title="Year Level Filter">
+                        <option value="">All years</option>
+                        <option value="1st Year" <?= (isset($year_level) && $year_level === '1st Year') ? "selected" : "" ?>>1st Year</option>
+                        <option value="2nd Year" <?= (isset($year_level) && $year_level === '2nd Year') ? "selected" : "" ?>>2nd Year</option>
+                        <option value="3rd Year" <?= (isset($year_level) && $year_level === '3rd Year') ? "selected" : "" ?>>3rd Year</option>
+                        <option value="4th Year" <?= (isset($year_level) && $year_level === '4th Year') ? "selected" : "" ?>>4th Year</option>
+                    </select>
+                </div>
+
+                <div class="field compact-field">
+                    <label>Section</label>
+                    <select name="section" title="Section Filter">
+                        <option value="">All sections</option>
+                        <option value="A" <?= (isset($section) && $section === 'A') ? "selected" : "" ?>>A</option>
+                        <option value="B" <?= (isset($section) && $section === 'B') ? "selected" : "" ?>>B</option>
+                    </select>
+                </div>
+
+                <button type="button" class="filter-toggle" id="filterToggle" aria-expanded="false" aria-label="More filters" title="More filters">
+                    <i class="fa-solid fa-sliders"></i>
+                </button>
+            </div>
+
+            <div class="advanced-filters" id="advancedFilters">
+                <div class="filter-row secondary-row">
+                    <div class="field date-field">
+                        <label>From</label>
+                        <input type="date" name="start_date" id="start_date" value="<?= htmlspecialchars($start_date) ?>" title="Start Date">
+                    </div>
+
+                    <div class="field date-field">
+                        <label>To</label>
+                        <input type="date" name="end_date" id="end_date" value="<?= htmlspecialchars($end_date) ?>" title="End Date">
+                    </div>
+
+                    <div class="field time-field">
+                        <label>Time From</label>
+                        <input type="time" name="time_from" value="<?= htmlspecialchars($time_from) ?>" title="Start Time">
+                    </div>
+
+                    <div class="field time-field">
+                        <label>Time To</label>
+                        <input type="time" name="time_to" value="<?= htmlspecialchars($time_to) ?>" title="End Time">
+                    </div>
+
+                    <div class="field compact-field per-page-field">
+                        <label>Per page</label>
+                        <select name="per_page" id="per_page_select" class="per-page-select" title="Items Per Page">
+                            <option value="10" <?= $per_page == 10 ? "selected" : "" ?>>10 / page</option>
+                            <option value="25" <?= $per_page == 25 ? "selected" : "" ?>>25 / page</option>
+                            <option value="50" <?= $per_page == 50 ? "selected" : "" ?>>50 / page</option>
+                            <option value="100" <?= $per_page == 100 ? "selected" : "" ?>>100 / page</option>
+                        </select>
+                    </div>
+
+                    <button type="button" onclick="openExportModal()" class="btn-export-options" title="Configure Export / Print Date Range">
+                        <i class="fa-solid fa-calendar-days"></i> Select Date & Export
+                    </button>
+
+                    <?php if (($_SESSION['admin_role'] ?? 'sub_admin') === 'super_admin'): ?>
+                    <button type="button" onclick="clearLogs()" class="btn-clear">CLEAR LOGS</button>
+                    <?php endif; ?>
                 </div>
             </div>
 
-            <!-- Quick Date Presets -->
-            <select id="quickPreset" onchange="applyPreset(this.value)" class="preset-select" title="Date Range Preset">
-                <option value="">Custom / Presets...</option>
-                <option value="today">Today</option>
-                <option value="yesterday">Yesterday</option>
-                <option value="this_week">This Week</option>
-                <option value="this_month">This Month</option>
-                <option value="all">All Dates</option>
-            </select>
-
-            <button type="button" onclick="openExportModal()" class="btn-export-options" title="Configure Export / Print Date Range">
-                <i class="fa-solid fa-calendar-days"></i> Select Date & Export
-            </button>
-
-            <?php if (($_SESSION['admin_role'] ?? 'sub_admin') === 'super_admin'): ?>
-            <button type="button" onclick="clearLogs()" class="btn-clear">CLEAR LOGS</button>
-            <?php endif; ?>
-
+            <!-- Hidden Page Input for Pagination -->
+            <input type="hidden" name="page" id="page_input" value="<?= $page ?>">
         </form>
 
         <form id="clearForm" method="POST" class="hidden-form">
@@ -219,66 +299,145 @@ if (isset($_REQUEST['export_csv'])) {
 
     <br>
 
-    <div class="table-wrap">
-    <table class="table">
-
-        <tr>
-            <th>Name</th>
-            <th>RFID UID</th>
-            <th>Course</th>
-            <th>Year</th>
-            <th>Section</th>
-            <th>Status</th>
-            <th>Time IN</th>
-            <th>Time OUT</th>
-        </tr>
-
-        <?php
-        $current_date = '';
-        while ($row = $result->fetch_assoc()) {
-            // determine the row date using time_in first, then time_out
-            $row_date = '';
-            if (!empty($row['time_in']) && $row['time_in'] != '0000-00-00 00:00:00') {
-                $row_date = date('Y-m-d', strtotime($row['time_in']));
-            } elseif (!empty($row['time_out']) && $row['time_out'] != '0000-00-00 00:00:00') {
-                $row_date = date('Y-m-d', strtotime($row['time_out']));
-            }
-
-            if ($row_date !== $current_date) {
-                $current_date = $row_date;
-                ?>
-                <tr class="date-header">
-                    <td colspan="8">
-                        <?= $current_date ? date('F j, Y', strtotime($current_date)) : 'No date' ?>
-                    </td>
-                </tr>
-                <?php
-            }
-            ?>
+    <div id="logsContainer">
+        <div class="table-wrap">
+        <table class="table">
 
             <tr>
-                <td><?= htmlspecialchars($row['name']) ?></td>
-                <td><?= htmlspecialchars($row['rfid_uid']) ?></td>
-
-                <td><?= htmlspecialchars($row['course'] ?? '') ?></td>
-                <td><?= htmlspecialchars($row['year_level'] ?? '') ?></td>
-                <td><?= htmlspecialchars($row['section'] ?? '') ?></td>
-
-                <td>
-                    <?php if ($row['status'] == "IN") { ?>
-                        <span class="status-in">IN</span>
-                    <?php } else { ?>
-                        <span class="status-out">OUT</span>
-                    <?php } ?>
-                </td>
-
-                <td><?= (!empty($row['time_in']) && $row['time_in'] != '0000-00-00 00:00:00') ? date('h:i A', strtotime($row['time_in'])) : '-' ?></td>
-                <td><?= (!empty($row['time_out']) && $row['time_out'] != '0000-00-00 00:00:00') ? date('h:i A', strtotime($row['time_out'])) : '-' ?></td>
+                <th>Name</th>
+                <th>RFID UID</th>
+                <th>Course</th>
+                <th>Year</th>
+                <th>Section</th>
+                <th>Status</th>
+                <th>IN</th>
+                <th>OUT</th>
             </tr>
 
-        <?php } ?>
+            <?php
+            if ($result && $result->num_rows > 0) {
+                $current_date = '';
+                while ($row = $result->fetch_assoc()) {
+                    // determine the row date using time_in first, then time_out
+                    $row_date = '';
+                    if (!empty($row['time_in']) && $row['time_in'] != '0000-00-00 00:00:00') {
+                        $row_date = date('Y-m-d', strtotime($row['time_in']));
+                    } elseif (!empty($row['time_out']) && $row['time_out'] != '0000-00-00 00:00:00') {
+                        $row_date = date('Y-m-d', strtotime($row['time_out']));
+                    }
 
-    </table>
+                    if ($row_date !== $current_date) {
+                        $current_date = $row_date;
+                        ?>
+                        <tr class="date-header">
+                            <td colspan="8">
+                                <?= $current_date ? date('F j, Y', strtotime($current_date)) : 'No date' ?>
+                            </td>
+                        </tr>
+                        <?php
+                    }
+                    ?>
+
+                    <tr>
+                        <td>
+                            <div class="user-cell">
+                                <?php if (!empty($row['photo']) && file_exists(__DIR__ . '/../uploads/students/' . $row['photo'])): ?>
+                                    <img src="../uploads/students/<?= htmlspecialchars($row['photo']) ?>" alt="<?= htmlspecialchars($row['name']) ?>" class="user-avatar-img">
+                                <?php else: ?>
+                                    <span class="user-avatar-placeholder"><?= strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $row['name']), 0, 1) ?: 'S') ?></span>
+                                <?php endif; ?>
+                                <span class="user-name-text"><?= htmlspecialchars($row['name']) ?></span>
+                            </div>
+                        </td>
+                        <td><?= htmlspecialchars($row['rfid_uid']) ?></td>
+
+                        <td><?= htmlspecialchars($row['course'] ?? '') ?></td>
+                        <td><?= htmlspecialchars($row['year_level'] ?? '') ?></td>
+                        <td><?= htmlspecialchars($row['section'] ?? '') ?></td>
+
+                        <td>
+                            <?php if ($row['status'] == "IN") { ?>
+                                <span class="status-in">IN</span>
+                            <?php } else { ?>
+                                <span class="status-out">OUT</span>
+                            <?php } ?>
+                        </td>
+
+                        <td><?= (!empty($row['time_in']) && $row['time_in'] != '0000-00-00 00:00:00') ? date('h:i A', strtotime($row['time_in'])) : '-' ?></td>
+                        <td><?= (!empty($row['time_out']) && $row['time_out'] != '0000-00-00 00:00:00') ? date('h:i A', strtotime($row['time_out'])) : '-' ?></td>
+                    </tr>
+
+                <?php }
+            } else { ?>
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 36px 16px; color: #64748b;">
+                        <i class="fa-solid fa-inbox" style="font-size: 2rem; margin-bottom: 8px; display: block; opacity: 0.5;"></i>
+                        No attendance logs found matching your criteria.
+                    </td>
+                </tr>
+            <?php } ?>
+
+        </table>
+        </div>
+
+        <!-- ================= PAGINATION SECTION ================= -->
+        <div class="pagination-section">
+            <?php if ($total_pages > 1): ?>
+            <div class="pagination-controls">
+                <!-- First Page -->
+                <button type="button" class="pagination-btn <?= ($page <= 1) ? 'disabled' : '' ?>" 
+                        onclick="goToPage(1)" <?= ($page <= 1) ? 'disabled' : '' ?> title="First Page">
+                    <i class="fa-solid fa-angles-left"></i>
+                </button>
+
+                <!-- Previous Page -->
+                <button type="button" class="pagination-btn <?= ($page <= 1) ? 'disabled' : '' ?>" 
+                        onclick="goToPage(<?= max(1, $page - 1) ?>)" <?= ($page <= 1) ? 'disabled' : '' ?> title="Previous Page">
+                    <i class="fa-solid fa-angle-left"></i>
+                </button>
+
+                <!-- Page Numbers -->
+                <?php
+                $start_p = max(1, $page - 2);
+                $end_p = min($total_pages, $page + 2);
+
+                if ($start_p > 1) {
+                    echo '<button type="button" class="pagination-btn" onclick="goToPage(1)">1</button>';
+                    if ($start_p > 2) {
+                        echo '<span class="pagination-ellipsis">&hellip;</span>';
+                    }
+                }
+
+                for ($p = $start_p; $p <= $end_p; $p++) {
+                    if ($p == $page) {
+                        echo '<button type="button" class="pagination-btn active">' . $p . '</button>';
+                    } else {
+                        echo '<button type="button" class="pagination-btn" onclick="goToPage(' . $p . ')">' . $p . '</button>';
+                    }
+                }
+
+                if ($end_p < $total_pages) {
+                    if ($end_p < $total_pages - 1) {
+                        echo '<span class="pagination-ellipsis">&hellip;</span>';
+                    }
+                    echo '<button type="button" class="pagination-btn" onclick="goToPage(' . $total_pages . ')">' . $total_pages . '</button>';
+                }
+                ?>
+
+                <!-- Next Page -->
+                <button type="button" class="pagination-btn <?= ($page >= $total_pages) ? 'disabled' : '' ?>" 
+                        onclick="goToPage(<?= min($total_pages, $page + 1) ?>)" <?= ($page >= $total_pages) ? 'disabled' : '' ?> title="Next Page">
+                    <i class="fa-solid fa-angle-right"></i>
+                </button>
+
+                <!-- Last Page -->
+                <button type="button" class="pagination-btn <?= ($page >= $total_pages) ? 'disabled' : '' ?>" 
+                        onclick="goToPage(<?= $total_pages ?>)" <?= ($page >= $total_pages) ? 'disabled' : '' ?> title="Last Page">
+                    <i class="fa-solid fa-angles-right"></i>
+                </button>
+            </div>
+            <?php endif; ?>
+        </div>
     </div>
 
 </div>
@@ -328,46 +487,19 @@ if (isset($_REQUEST['export_csv'])) {
         }
     }
 
+    function goToPage(p) {
+        var pageInput = document.getElementById('page_input');
+        if (pageInput) {
+            pageInput.value = p;
+            document.getElementById('filterForm').submit();
+        }
+    }
+
     function formatDate(d) {
         var year = d.getFullYear();
         var month = ('0' + (d.getMonth() + 1)).slice(-2);
         var day = ('0' + d.getDate()).slice(-2);
         return year + '-' + month + '-' + day;
-    }
-
-    function applyPreset(preset) {
-        var startInput = document.getElementById('start_date');
-        var endInput = document.getElementById('end_date');
-        if (!startInput || !endInput) return;
-
-        var today = new Date();
-
-        if (preset === 'today') {
-            var dateStr = formatDate(today);
-            startInput.value = dateStr;
-            endInput.value = dateStr;
-        } else if (preset === 'yesterday') {
-            var y = new Date(today);
-            y.setDate(y.getDate() - 1);
-            var dateStr = formatDate(y);
-            startInput.value = dateStr;
-            endInput.value = dateStr;
-        } else if (preset === 'this_week') {
-            var day = today.getDay();
-            var diffToMon = today.getDate() - day + (day === 0 ? -6 : 1);
-            var mon = new Date(today.setDate(diffToMon));
-            startInput.value = formatDate(mon);
-            endInput.value = formatDate(new Date());
-        } else if (preset === 'this_month') {
-            var firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-            startInput.value = formatDate(firstDay);
-            endInput.value = formatDate(today);
-        } else if (preset === 'all') {
-            startInput.value = '';
-            endInput.value = '';
-        }
-
-        document.getElementById('filterForm').submit();
     }
 
     function openExportModal() {
@@ -419,6 +551,8 @@ if (isset($_REQUEST['export_csv'])) {
 
         document.getElementById('start_date').value = mStart;
         document.getElementById('end_date').value = mEnd;
+        var pageInput = document.getElementById('page_input');
+        if (pageInput) pageInput.value = 1;
         closeExportModal();
 
         if (type === 'csv') {
@@ -431,9 +565,10 @@ if (isset($_REQUEST['export_csv'])) {
             form.submit();
             form.removeChild(hiddenExport);
         } else if (type === 'print') {
-            // Apply filter then trigger print
+            // Apply filter then trigger print with all records fetched
             var form = document.getElementById('filterForm');
             var formData = new FormData(form);
+            formData.set('print_all', '1');
             fetch(window.location.href, {
                 method: 'POST',
                 body: formData
@@ -454,11 +589,43 @@ if (isset($_REQUEST['export_csv'])) {
     document.addEventListener('DOMContentLoaded', function () {
         var form = document.getElementById('filterForm');
         if (!form) return;
+
+        var advancedFilters = document.getElementById('advancedFilters');
+        var filterToggle = document.getElementById('filterToggle');
+        if (advancedFilters && filterToggle) {
+            var shouldOpen = [
+                document.getElementById('start_date'),
+                document.getElementById('end_date'),
+                form.querySelector('input[name="time_from"]'),
+                form.querySelector('input[name="time_to"]')
+            ].some(function (field) {
+                return field && field.value;
+            });
+
+            if (shouldOpen) {
+                advancedFilters.classList.add('open');
+                filterToggle.setAttribute('aria-expanded', 'true');
+                filterToggle.setAttribute('aria-label', 'Less filters');
+                filterToggle.setAttribute('title', 'Less filters');
+                filterToggle.innerHTML = '<i class="fa-solid fa-sliders"></i>';
+            }
+
+            filterToggle.addEventListener('click', function () {
+                var isOpen = advancedFilters.classList.toggle('open');
+                filterToggle.setAttribute('aria-expanded', String(isOpen));
+                var nextLabel = isOpen ? 'Less filters' : 'More filters';
+                filterToggle.setAttribute('aria-label', nextLabel);
+                filterToggle.setAttribute('title', nextLabel);
+                filterToggle.innerHTML = '<i class="fa-solid fa-sliders"></i>';
+            });
+        }
         
         // Listen to select changes
-        var selects = form.querySelectorAll('select:not(#quickPreset)');
+        var selects = form.querySelectorAll('select');
         for (var i = 0; i < selects.length; i++) {
             selects[i].addEventListener('change', function () {
+                var pageInput = document.getElementById('page_input');
+                if (pageInput) pageInput.value = 1;
                 form.submit();
             });
         }
@@ -467,7 +634,8 @@ if (isset($_REQUEST['export_csv'])) {
         var dateInputs = form.querySelectorAll('input[type="date"]');
         dateInputs.forEach(function(input) {
             input.addEventListener('change', function () {
-                document.getElementById('quickPreset').value = '';
+                var pageInput = document.getElementById('page_input');
+                if (pageInput) pageInput.value = 1;
                 form.submit();
             });
         });
@@ -495,9 +663,10 @@ if (isset($_REQUEST['export_csv'])) {
         .then(html => {
             var parser = new DOMParser();
             var doc = parser.parseFromString(html, 'text/html');
-            var newTableWrap = doc.querySelector('.table-wrap');
-            if (newTableWrap) {
-                document.querySelector('.table-wrap').innerHTML = newTableWrap.innerHTML;
+            var newContainer = doc.querySelector('#logsContainer');
+            var currContainer = document.querySelector('#logsContainer');
+            if (newContainer && currContainer) {
+                currContainer.innerHTML = newContainer.innerHTML;
             }
         })
         .catch(err => console.error('Error auto-refreshing logs:', err));

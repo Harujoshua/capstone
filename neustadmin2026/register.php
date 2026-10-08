@@ -1,12 +1,24 @@
 <?php
 include('../db.php');
 include('auth.php');
+include_once('admin_db.php');
+
+$is_super_admin = (($_SESSION['admin_role'] ?? 'sub_admin') === 'super_admin');
+$can_edit_student = $is_super_admin || (get_admin_setting($admin_conn, 'subadmin_student_edit', '1') === '1');
 
 // Handle form submission and edit mode
 $error = '';
 $existing = [];
 $edit_id = intval($_REQUEST['id'] ?? 0);
 if ($edit_id) {
+  if (!$can_edit_student) {
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+      echo json_encode(['success' => false, 'error' => 'You do not have permission to edit student records.']);
+      exit;
+    }
+    header('Location: students.php');
+    exit;
+  }
   $res_e = $conn->query("SELECT * FROM students WHERE id=$edit_id LIMIT 1");
   if ($res_e && $res_e->num_rows) {
     $existing = $res_e->fetch_assoc();
@@ -50,8 +62,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $check_sql .= " AND id!={$edit_id}";
     }
     $check = $conn->query($check_sql . " LIMIT 1");
+    $check_fac = $conn->query("SELECT id FROM faculty WHERE rfid_uid='$rfid_safe' LIMIT 1");
     if ($check && $check->num_rows > 0) {
       $error = 'A student with that RFID UID already exists.';
+    } elseif ($check_fac && $check_fac->num_rows > 0) {
+      $error = 'That RFID UID is already registered to a faculty member.';
     } else {
       
       $colCheck1 = $conn->query("SHOW COLUMNS FROM students LIKE 'parent_email'");
@@ -121,9 +136,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           $finfo = finfo_open(FILEINFO_MIME_TYPE);
           $mime = finfo_file($finfo, $_FILES['photo']['tmp_name']);
           finfo_close($finfo);
-          $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif', 'image/webp' => 'webp'];
-          if (!isset($allowed[  $mime])) {
-            $error = 'Unsupported image type. Use JPG, PNG, GIF, or WEBP';
+          $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png'];
+          if (!isset($allowed[$mime])) {
+            $error = 'Unsupported image type. Only PNG and JPEG images are allowed.';
           } else {
             $maxBytes = 4 * 1024 * 1024; // desired max
             if ($_FILES['photo']['size'] > $maxBytes) {
@@ -131,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
               $uploadDir = __DIR__ . '/../uploads/students';
               if (!is_dir($uploadDir))
-                @mkdir($uploadDir, 0755, true);
+                @mkdir($uploadDir, 0777, true);
               $ext = $allowed[$mime];
               $basename = time() . '_' . uniqid() . '.' . $ext;
               $target = $uploadDir . '/' . $basename;
@@ -277,8 +292,8 @@ include('navbar.php');
             <?php endif; ?>
           </div>
           <div class="field">
-            <label for="photo">Photo <span class="small">(JPG/PNG/GIF/WEBP, max 4MB)</span></label>
-            <input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/gif,image/webp" class="input file-input">
+            <label for="photo">Photo <span class="small">(PNG/JPEG)</span></label>
+            <input id="photo" name="photo" type="file" accept="image/jpeg,image/png" class="input file-input">
             <div class="file-meta">Tip: you can preview the photo before submitting.</div>
           </div>
 
@@ -288,7 +303,6 @@ include('navbar.php');
               <input id="rfid_uid" name="rfid_uid" type="text" placeholder="Waiting for card scan..." required
                 autocomplete="off" class="input"
                 value="<?= htmlspecialchars($_POST['rfid_uid'] ?? $existing['rfid_uid'] ??  '') ?>">
-              <button type="button" id="clearRfid" class="btn btn-secondary">Clear</button>
             </div>
             <div id="rfidStatus" class="small-status">
               <div class="rfid-indicator">
@@ -420,6 +434,11 @@ include('navbar.php');
       photoInput.addEventListener('change', function () {
         const f = this.files && this.files[0];
         if (!f) return;
+        if (!['image/jpeg', 'image/png'].includes(f.type)) {
+          alert('Unsupported image format. Only PNG and JPEG images are allowed.');
+          this.value = '';
+          return;
+        }
         const max = 4 * 1024 * 1024; // 4MB
         if (f.size > max) {
           alert('Selected image is too large (max 4MB).');
@@ -436,8 +455,7 @@ include('navbar.php');
     const uidInput = document.getElementById('rfid_uid');
     const statusBox = document.getElementById('rfidStatus');
     const statusText = statusBox ? statusBox.querySelector('.rfid-status-text') : null;
-    const clearBtn = document.getElementById('clearRfid');
-    let lastUid = uidInput.value;
+    let lastUid = uidInput ? uidInput.value : '';
 
     async function poll() {
       try {
@@ -459,17 +477,6 @@ include('navbar.php');
 
     if (uidInput) {
       poll();
-      if (clearBtn) {
-        clearBtn.addEventListener('click', function () {
-          uidInput.value = '';
-          lastUid = '';
-          if (statusText) {
-            statusText.textContent = 'Ready to scan...';
-            statusBox.querySelector('.rfid-indicator').style.background = '#eef3fb';
-            statusBox.querySelector('.rfid-indicator').style.color = 'var(--accent)';
-          }
-        });
-      }
       
       // Also update lastUid if user types manually
       uidInput.addEventListener('input', () => {

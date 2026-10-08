@@ -1,0 +1,39 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor "Student" as Student
+
+rectangle "NEUST Gatepass Student Module" {
+usecase "Logout" as UC10
+usecase "View Excuse Letter Status" as UC09
+usecase "Submit Excuse Letter" as UC08
+usecase "Download Attendance Report" as UC07
+usecase "View Attendance Summary" as UC06
+usecase "View My Profile" as UC05
+usecase "View My Schedule" as UC04
+usecase "View My Subjects" as UC03
+usecase "View Dashboard" as UC02
+usecase "Login to Student Portal" as UC01
+}
+
+Student --> UC01
+Student --> UC02
+Student --> UC03
+Student --> UC04
+Student --> UC05
+Student --> UC06
+Student --> UC07
+Student --> UC08
+Student --> UC09
+Student --> UC10
+
+note right of Student
+  Student access is limited to their own
+  course schedule, attendance records,
+  profile, and excuse submissions.
+end note
+
+@enduml

@@ -188,6 +188,21 @@ body {
     color: #92400e;
 }
 
+.status-excused {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.status-pending {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.status-excuse-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
 /* Activity Log */
 .activity-item {
     display: flex;
